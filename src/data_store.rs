@@ -38,7 +38,8 @@ impl KeyValueStore {
     }
 
     /// Inserts a Key-Value(in String type) pair in the KeyValueStore
-    fn set(&mut self, key: String, value: String, timeout: Option<Duration>) {
+    /// Note: it will always be stored as Vec<u8> internally.
+    fn set_with_string_value(&mut self, key: String, value: String, timeout: Option<Duration>) {
         todo!();
     }
 
@@ -47,7 +48,7 @@ impl KeyValueStore {
         todo!();
     }
 
-    /// Gets a Value (in String type) associated to the Key in the KeyValueStore
+    /// Gets a Value (converted to String type) associated to the Key in the KeyValueStore
     fn get_as_string(&mut self, key: String) -> String {
         todo!();
     }
@@ -64,7 +65,7 @@ impl KeyValueStore {
     }
 
     /// Removes the Key-Value pair for the given Key in the KeyValueStore
-    /// and returns the Value (in String type)
+    /// and returns the Value (converted to String type)
     fn pop_as_string(&mut self, key: String) -> Vec<u8> {
         todo!();
     }
