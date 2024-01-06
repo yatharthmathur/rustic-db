@@ -1,4 +1,3 @@
-#![crate_name = "doc"]
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 
@@ -13,7 +12,7 @@ struct KeyValueEntry {
 }
 
 /// The main struct of the Key-Value store
-struct KeyValueStore {
+pub struct KeyValueStore {
     /// The data is internally stored as a HashMap mapping String keys to a KeyValueEntry struct
     data: HashMap<String, KeyValueEntry>,
 
@@ -25,53 +24,59 @@ impl KeyValueStore {
     /// Returns a new KeyValue store
     /// Arguments:
     /// * `default_ttl` - `Duration` which is the duration for which every key by default lives in the cache.
-    fn new(default_ttl: Duration) -> Self {
-        KeyValueStore {
-            data: HashMap::new(),
-            default_ttl,
+    pub fn new(default_ttl: Option<Duration>) -> Self {
+        match default_ttl {
+            Some(ttl) => KeyValueStore {
+                data: HashMap::new(),
+                default_ttl: ttl,
+            },
+            _ => KeyValueStore {
+                data: HashMap::new(),
+                default_ttl: Duration::new(0, 0),
+            },
         }
     }
 
     /// Inserts a Key-Value(in Vec<u8> type) pair in the KeyValueStore
-    fn set(&mut self, key: String, value: Vec<u8>, timeout: Option<Duration>) {
+    pub fn set(&mut self, key: String, value: Vec<u8>, timeout: Option<Duration>) {
         todo!();
     }
 
     /// Inserts a Key-Value(in String type) pair in the KeyValueStore
     /// Note: it will always be stored as Vec<u8> internally.
-    fn set_with_string_value(&mut self, key: String, value: String, timeout: Option<Duration>) {
+    pub fn set_with_string_value(&mut self, key: String, value: String, timeout: Option<Duration>) {
         todo!();
     }
 
     /// Gets a Value (in Vec<u8> type) associated to the Key in the KeyValueStore
-    fn get(&mut self, key: String) -> Vec<u8> {
+    pub fn get(&mut self, key: String) -> Vec<u8> {
         todo!();
     }
 
     /// Gets a Value (converted to String type) associated to the Key in the KeyValueStore
-    fn get_as_string(&mut self, key: String) -> String {
+    pub fn get_as_string(&mut self, key: String) -> String {
         todo!();
     }
 
     /// Removes the Key-Value pair for the given Key in the KeyValueStore
-    fn remove(&mut self, key: String) {
+    pub fn remove(&mut self, key: String) {
         todo!();
     }
 
     /// Removes the Key-Value pair for the given Key in the KeyValueStore
     /// and returns the Value (in Vec<u8> type)
-    fn pop(&mut self, key: String) -> Vec<u8> {
+    pub fn pop(&mut self, key: String) -> Vec<u8> {
         todo!();
     }
 
     /// Removes the Key-Value pair for the given Key in the KeyValueStore
     /// and returns the Value (converted to String type)
-    fn pop_as_string(&mut self, key: String) -> Vec<u8> {
+    pub fn pop_as_string(&mut self, key: String) -> Vec<u8> {
         todo!();
     }
 
     /// Clear all Key-Value pairs from the KeyValueStore
-    fn clear(&mut self) {
+    pub fn clear(&mut self) {
         todo!();
     }
 }
