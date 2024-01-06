@@ -23,11 +23,11 @@ pub struct KeyValueStore {
 impl KeyValueStore {
     /// Returns a new KeyValue store
     /// Arguments:
-    /// * `default_ttl` - `Duration` which is the duration for which every key by default lives in the cache.
-    pub fn new(default_ttl: Duration) -> Self {
+    /// * `default_ttl` - duration in milliseconds for  which every key by default lives in the cache.
+    pub fn new(default_ttl_millis: u64) -> Self {
         KeyValueStore {
             data: HashMap::new(),
-            default_ttl,
+            default_ttl: Duration::from_millis(default_ttl_millis),
         }
     }
 
