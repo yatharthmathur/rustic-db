@@ -24,16 +24,10 @@ impl KeyValueStore {
     /// Returns a new KeyValue store
     /// Arguments:
     /// * `default_ttl` - `Duration` which is the duration for which every key by default lives in the cache.
-    pub fn new(default_ttl: Option<Duration>) -> Self {
-        match default_ttl {
-            Some(ttl) => KeyValueStore {
-                data: HashMap::new(),
-                default_ttl: ttl,
-            },
-            _ => KeyValueStore {
-                data: HashMap::new(),
-                default_ttl: Duration::new(0, 0),
-            },
+    pub fn new(default_ttl: Duration) -> Self {
+        KeyValueStore {
+            data: HashMap::new(),
+            default_ttl,
         }
     }
 
