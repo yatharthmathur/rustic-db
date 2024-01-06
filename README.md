@@ -1,3 +1,5 @@
+![Project workflow](https://github.com/yatharthmathur/rustic-db/actions/workflows/build-and-test.yml/badge.svg)
+
 # RusticDB
 A fast and lightweight KeyValue store written in Rust.
 
