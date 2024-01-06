@@ -6,3 +6,8 @@ repos:
     args: [--autofix]
   - id: pretty-format-yaml
     args: [--autofix, --indent, '2']
+- repo: https://github.com/doublify/pre-commit-rust
+  rev: master
+  hooks:
+  - id: cargo-check
+  # - id: clippy
