@@ -47,7 +47,7 @@ pub struct KeyValueStore {
     _data: HashMap<String, KeyValueEntry>,
 
     /// The default time to live for each key is set here (globally).
-    default_ttl: Duration,
+    default_ttl: u64,
 }
 
 impl KeyValueStore {
@@ -57,7 +57,7 @@ impl KeyValueStore {
     pub fn new(default_ttl_millis: u64) -> Self {
         KeyValueStore {
             _data: HashMap::new(),
-            default_ttl: Duration::from_millis(default_ttl_millis),
+            default_ttl: default_ttl_millis,
         }
     }
 
@@ -87,16 +87,16 @@ impl KeyValueStore {
     }
 
     /// Inserts a Key-Value(in Vec<u8> type) pair in the KeyValueStore
-    pub fn set(&mut self, key: String, value: Vec<u8>, ttl: Option<Duration>) {
-        let expiration = Instant::now() + ttl.unwrap_or(self.default_ttl);
+    pub fn set(&mut self, key: String, value: Vec<u8>, ttl: Option<u64>) {
+        let expiration = Instant::now() + Duration::from_millis(ttl.unwrap_or(self.default_ttl));
         let kv_entry = KeyValueEntry::new(value, expiration);
         self._insert(key, kv_entry);
     }
 
     /// Inserts a Key-Value(in String type) pair in the KeyValueStore
     /// Note: it will always be stored as Vec<u8> internally.
-    pub fn set_with_string_value(&mut self, key: String, value: String, ttl: Option<Duration>) {
-        let expiration = Instant::now() + ttl.unwrap_or(self.default_ttl);
+    pub fn set_with_string_value(&mut self, key: String, value: String, ttl: Option<u64>) {
+        let expiration = Instant::now() + Duration::from_millis(ttl.unwrap_or(self.default_ttl));
         let kv_entry = KeyValueEntry::from_string(value, expiration);
         self._insert(key, kv_entry);
     }
