@@ -64,7 +64,7 @@ pub mod tests {
         };
         let mut store = KeyValueStore::new(0);
         let bin_code = bincode::serialize(&local_struct_instance).unwrap();
-        store.set("ABC".to_string(), bin_code.clone(), Some(5000));
+        store.set("ABC".to_string(), bin_code, Some(5000));
 
         if let Some(vec_val) = store.pop("ABC".to_string()) {
             let new_local_struct: LocalStruct = bincode::deserialize(&vec_val).unwrap();
