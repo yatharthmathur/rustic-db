@@ -1,5 +1,6 @@
 pub mod tests {
     use crate::KeyValueStore;
+    use serde::{Deserialize, Serialize};
     use std::time::Duration;
 
     #[test]
@@ -46,6 +47,33 @@ pub mod tests {
             if let Ok(val) = String::from_utf8(vec_val.to_owned()) {
                 assert_eq!(val, "HELLO".to_string());
             }
+        }
+    }
+
+    #[test]
+    fn test_get_set_binary_data() {
+        #[derive(Serialize, Deserialize)]
+        struct LocalStruct {
+            test1: f64,
+            test2: String,
+        }
+
+        let local_struct_instance: LocalStruct = LocalStruct {
+            test1: 3.1415,
+            test2: "Hey there".to_string(),
+        };
+        let mut store = KeyValueStore::new(0);
+        let bin_code = bincode::serialize(&local_struct_instance).unwrap();
+        store.set("ABC".to_string(), bin_code.clone(), Some(5000));
+
+        if let Some(vec_val) = store.pop("ABC".to_string()) {
+            let new_local_struct: LocalStruct = bincode::deserialize(&vec_val).unwrap();
+            let struct_to_compare = LocalStruct {
+                test1: 3.1415,
+                test2: "Hey there".to_string(),
+            };
+            assert_eq!(new_local_struct.test1, struct_to_compare.test1);
+            assert_eq!(new_local_struct.test2, struct_to_compare.test2);
         }
     }
 
