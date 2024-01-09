@@ -23,6 +23,23 @@ impl KeyValueEntry {
     }
 
     /// Extract value and convert it to String from KeyValueEntry
+    fn extract_string_value_from_kv_entry_ref(
+        kv_entry_option: Option<&KeyValueEntry>,
+    ) -> Option<String> {
+        if kv_entry_option.is_none() {
+            return None;
+        }
+
+        // kv_entry_option is definitely Some.
+        let kv_entry = kv_entry_option.unwrap();
+        match String::from_utf8(kv_entry.value.to_owned()) {
+            Ok(string) => Some(string),
+            // This case will not happen as all values that
+            // were initially stored in the DB were valid.
+            _ => None,
+        }
+    }
+
     fn extract_string_value_from_kv_entry(
         kv_entry_option: Option<KeyValueEntry>,
     ) -> Option<String> {
@@ -61,26 +78,26 @@ impl KeyValueStore {
         }
     }
 
-    fn _insert(&mut self, key: String, kv_entry: KeyValueEntry) {
-        self._data.insert(key.clone(), kv_entry);
+    fn _insert(&mut self, key: &String, kv_entry: &KeyValueEntry) {
+        self._data.insert(key.to_owned(), kv_entry.to_owned());
     }
 
-    fn _remove(&mut self, key: String) -> Option<KeyValueEntry> {
-        self._data.remove(&key)
+    fn _remove(&mut self, key: &String) -> Option<KeyValueEntry> {
+        self._data.remove(key)
     }
 
-    fn _get_or_remove_if_expired(&mut self, key: String) -> Option<KeyValueEntry> {
+    fn _get_or_remove_if_expired(&mut self, key: &String) -> Option<&KeyValueEntry> {
         let now = Instant::now();
-        if let Some(kv_entry) = self._data.get(&key) {
+        if let Some(kv_entry) = self._data.get(key) {
             if now >= kv_entry.expiration {
-                self._data.remove(&key);
+                self._data.remove(key);
             }
         };
-        self._data.get(&key).cloned()
+        self._data.get(key)
     }
 
     pub fn contains(&mut self, key: String) -> bool {
-        match self._get_or_remove_if_expired(key) {
+        match self._get_or_remove_if_expired(&key) {
             Some(_) => true,
             _ => false,
         }
@@ -90,7 +107,7 @@ impl KeyValueStore {
     pub fn set(&mut self, key: String, value: Vec<u8>, ttl: Option<u64>) {
         let expiration = Instant::now() + Duration::from_millis(ttl.unwrap_or(self.default_ttl));
         let kv_entry = KeyValueEntry::new(value, expiration);
-        self._insert(key, kv_entry);
+        self._insert(&key, &kv_entry);
     }
 
     /// Inserts a Key-Value(in String type) pair in the KeyValueStore
@@ -98,32 +115,32 @@ impl KeyValueStore {
     pub fn set_with_string_value(&mut self, key: String, value: String, ttl: Option<u64>) {
         let expiration = Instant::now() + Duration::from_millis(ttl.unwrap_or(self.default_ttl));
         let kv_entry = KeyValueEntry::from_string(value, expiration);
-        self._insert(key, kv_entry);
+        self._insert(&key, &kv_entry);
     }
 
     /// Gets a Value (in Vec<u8> type) associated to the Key in the KeyValueStore
-    pub fn get(&mut self, key: String) -> Option<Vec<u8>> {
-        match self._get_or_remove_if_expired(key) {
-            Some(kv_entry) => Some(kv_entry.value),
+    pub fn get(&mut self, key: String) -> Option<&Vec<u8>> {
+        match self._get_or_remove_if_expired(&key) {
+            Some(kv_entry) => Some(kv_entry.value.as_ref()),
             _ => None,
         }
     }
 
     /// Gets a Value (converted to String type) associated to the Key in the KeyValueStore
     pub fn get_as_string(&mut self, key: String) -> Option<String> {
-        let kv_entry_option = self._get_or_remove_if_expired(key);
-        KeyValueEntry::extract_string_value_from_kv_entry(kv_entry_option)
+        let kv_entry_option = self._get_or_remove_if_expired(&key);
+        KeyValueEntry::extract_string_value_from_kv_entry_ref(kv_entry_option)
     }
 
     /// Removes the Key-Value pair for the given Key in the KeyValueStore
     pub fn remove(&mut self, key: String) {
-        self._remove(key);
+        self._remove(&key);
     }
 
     /// Removes the Key-Value pair for the given Key in the KeyValueStore
     /// and returns the Value (in Vec<u8> type)
     pub fn pop(&mut self, key: String) -> Option<Vec<u8>> {
-        match self._remove(key) {
+        match self._remove(&key) {
             Some(kv_entry) => Some(kv_entry.value),
             _ => None,
         }
@@ -132,7 +149,7 @@ impl KeyValueStore {
     /// Removes the Key-Value pair for the given Key in the KeyValueStore
     /// and returns the Value (converted to String type)
     pub fn pop_as_string(&mut self, key: String) -> Option<String> {
-        let kv_entry_option = self._remove(key);
+        let kv_entry_option = self._remove(&key);
         KeyValueEntry::extract_string_value_from_kv_entry(kv_entry_option)
     }
 

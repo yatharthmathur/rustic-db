@@ -28,7 +28,22 @@ pub mod tests {
         }
 
         if let Some(vec_val) = store.get("ABC".to_string()) {
-            if let Ok(val) = String::from_utf8(vec_val) {
+            if let Ok(val) = String::from_utf8(vec_val.to_owned()) {
+                assert_eq!(val, "HELLO".to_string());
+            }
+        }
+    }
+
+    #[test]
+    fn test_pop_vec_u8() {
+        let mut store = KeyValueStore::new(0);
+        store.set("ABC".to_string(), "HELLO".as_bytes().to_vec(), Some(5000));
+        if let Some(val) = store.get_as_string("ABC".to_string()) {
+            assert_eq!(val, "HELLO".to_string());
+        }
+
+        if let Some(vec_val) = store.pop("ABC".to_string()) {
+            if let Ok(val) = String::from_utf8(vec_val.to_owned()) {
                 assert_eq!(val, "HELLO".to_string());
             }
         }
