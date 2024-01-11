@@ -10,4 +10,4 @@ A fast and lightweight KeyValue store written in Rust.
     - Then run `pre-commit install` in the project directory
 
 ## How to run
-TODO
+```cargo run```
