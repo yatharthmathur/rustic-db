@@ -3,7 +3,7 @@ use std::time::{Duration, Instant};
 
 /// Each entry of the Key-Value pair in the Data store is this struct.
 #[derive(Clone)]
-pub struct ValueEntry {
+struct ValueEntry {
     /// Internally all values are stored as a Vector of Bytes
     value: Vec<u8>,
 
@@ -85,10 +85,6 @@ impl KeyValueStore {
         }
     }
 
-    pub fn get_data(&mut self) -> &HashMap<String, ValueEntry> {
-        &self._data
-    }
-
     pub fn contains(&mut self, key: String) -> bool {
         match self._get_or_none_if_expired(&key) {
             Some(_) => true,
@@ -155,5 +151,32 @@ impl KeyValueStore {
     /// Clear all Key-Value pairs from the KeyValueStore
     pub fn clear(&mut self) {
         self._data.clear();
+    }
+}
+
+pub mod private_tests {
+    use super::KeyValueStore;
+    use std::time::Duration;
+
+    #[test]
+    fn test_clear_all_expired_keys() {
+        let mut store = KeyValueStore::new(5000);
+        store.set_with_string_value("ABC".to_string(), "HELLO".to_string(), Some(250));
+        store.set_with_string_value("XYZ".to_string(), "HELLO".to_string(), Some(250));
+        store.set_with_string_value("DEF".to_string(), "HELLO".to_string(), Some(250));
+
+        store.clear_all_expired_keys();
+
+        assert!(store._data.contains_key("ABC"));
+
+        std::thread::sleep(Duration::from_millis(250));
+        assert!(store._data.contains_key("ABC"));
+        assert!(store._data.contains_key("DEF"));
+        assert!(store._data.contains_key("XYZ"));
+
+        store.clear_all_expired_keys();
+        assert_eq!(store._data.contains_key("ABC"), false);
+        assert_eq!(store._data.contains_key("DEF"), false);
+        assert_eq!(store._data.contains_key("XYZ"), false);
     }
 }
