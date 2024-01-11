@@ -40,6 +40,13 @@ impl KeyValueStore {
         self._data.get(key)
     }
 
+    fn _persist_db(&mut self) {
+        /// open file
+        /// write in binary
+        ///
+        todo!();
+    }
+
     pub fn clear_all_expired_keys(&mut self) {
         let now = Instant::now();
         let expired_keys: Vec<String> = self
