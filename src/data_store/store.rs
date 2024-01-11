@@ -3,7 +3,7 @@ use std::time::{Duration, Instant};
 
 /// Each entry of the Key-Value pair in the Data store is this struct.
 #[derive(Clone)]
-struct KeyValueEntry {
+struct ValueEntry {
     /// Internally all values are stored as a Vector of Bytes
     value: Vec<u8>,
 
@@ -12,44 +12,19 @@ struct KeyValueEntry {
     // todo: Add more fields depending on type maybe.
 }
 
-impl KeyValueEntry {
+impl ValueEntry {
     pub fn new(value: Vec<u8>, expiration: Instant) -> Self {
-        KeyValueEntry { value, expiration }
+        ValueEntry { value, expiration }
     }
 
     pub fn from_string(value_string: String, expiration: Instant) -> Self {
         let value = value_string.as_bytes().to_vec();
-        KeyValueEntry { value, expiration }
+        ValueEntry { value, expiration }
     }
 
     /// Extract value and convert it to String from KeyValueEntry
-    fn extract_string_value_from_kv_entry_ref(
-        kv_entry_option: Option<&KeyValueEntry>,
-    ) -> Option<String> {
-        if kv_entry_option.is_none() {
-            return None;
-        }
-
-        // kv_entry_option is definitely Some.
-        let kv_entry = kv_entry_option.unwrap();
-        match String::from_utf8(kv_entry.value.to_owned()) {
-            Ok(string) => Some(string),
-            // This case will not happen as all values that
-            // were initially stored in the DB were valid.
-            _ => None,
-        }
-    }
-
-    fn extract_string_value_from_kv_entry(
-        kv_entry_option: Option<KeyValueEntry>,
-    ) -> Option<String> {
-        if kv_entry_option.is_none() {
-            return None;
-        }
-
-        // kv_entry_option is definitely Some.
-        let kv_entry = kv_entry_option.unwrap();
-        match String::from_utf8(kv_entry.value) {
+    fn extract_string_value_from_value_entry(value_entry: &ValueEntry) -> Option<String> {
+        match String::from_utf8(value_entry.value.to_owned()) {
             Ok(string) => Some(string),
             // This case will not happen as all values that
             // were initially stored in the DB were valid.
@@ -61,7 +36,7 @@ impl KeyValueEntry {
 /// The main struct of the Key-Value store
 pub struct KeyValueStore {
     /// The data is internally stored as a HashMap mapping String keys to a KeyValueEntry struct
-    _data: HashMap<String, KeyValueEntry>,
+    _data: HashMap<String, ValueEntry>,
 
     /// The default time to live for each key is set here (globally).
     default_ttl: u64,
@@ -78,26 +53,40 @@ impl KeyValueStore {
         }
     }
 
-    fn _insert(&mut self, key: &String, kv_entry: &KeyValueEntry) {
-        self._data.insert(key.to_owned(), kv_entry.to_owned());
+    fn _insert(&mut self, key: &String, value_entry: &ValueEntry) {
+        self._data.insert(key.to_owned(), value_entry.to_owned());
     }
 
-    fn _remove(&mut self, key: &String) -> Option<KeyValueEntry> {
+    fn _remove(&mut self, key: &String) -> Option<ValueEntry> {
         self._data.remove(key)
     }
 
-    fn _get_or_remove_if_expired(&mut self, key: &String) -> Option<&KeyValueEntry> {
+    fn _get_or_none_if_expired(&mut self, key: &String) -> Option<&ValueEntry> {
         let now = Instant::now();
-        if let Some(kv_entry) = self._data.get(key) {
-            if now >= kv_entry.expiration {
-                self._data.remove(key);
+        if let Some(value_entry) = self._data.get(key) {
+            if now >= value_entry.expiration {
+                return None;
             }
         };
         self._data.get(key)
     }
 
+    pub fn clear_all_expired_keys(&mut self) {
+        let now = Instant::now();
+        let expired_keys: Vec<String> = self
+            ._data
+            .iter()
+            .filter(|(_, value_entry)| now >= value_entry.expiration)
+            .map(|(key, _)| key.to_owned())
+            .collect();
+
+        for key in expired_keys {
+            self.remove(key);
+        }
+    }
+
     pub fn contains(&mut self, key: String) -> bool {
-        match self._get_or_remove_if_expired(&key) {
+        match self._get_or_none_if_expired(&key) {
             Some(_) => true,
             _ => false,
         }
@@ -106,30 +95,33 @@ impl KeyValueStore {
     /// Inserts a Key-Value(in Vec<u8> type) pair in the KeyValueStore
     pub fn set(&mut self, key: String, value: Vec<u8>, ttl: Option<u64>) {
         let expiration = Instant::now() + Duration::from_millis(ttl.unwrap_or(self.default_ttl));
-        let kv_entry = KeyValueEntry::new(value, expiration);
-        self._insert(&key, &kv_entry);
+        let value_entry = ValueEntry::new(value, expiration);
+        self._insert(&key, &value_entry);
     }
 
     /// Inserts a Key-Value(in String type) pair in the KeyValueStore
     /// Note: it will always be stored as Vec<u8> internally.
     pub fn set_with_string_value(&mut self, key: String, value: String, ttl: Option<u64>) {
         let expiration = Instant::now() + Duration::from_millis(ttl.unwrap_or(self.default_ttl));
-        let kv_entry = KeyValueEntry::from_string(value, expiration);
-        self._insert(&key, &kv_entry);
+        let value_entry = ValueEntry::from_string(value, expiration);
+        self._insert(&key, &value_entry);
     }
 
     /// Gets a Value (in Vec<u8> type) associated to the Key in the KeyValueStore
     pub fn get(&mut self, key: String) -> Option<&Vec<u8>> {
-        match self._get_or_remove_if_expired(&key) {
-            Some(kv_entry) => Some(kv_entry.value.as_ref()),
+        match self._get_or_none_if_expired(&key) {
+            Some(value_entry) => Some(value_entry.value.as_ref()),
             _ => None,
         }
     }
 
     /// Gets a Value (converted to String type) associated to the Key in the KeyValueStore
     pub fn get_as_string(&mut self, key: String) -> Option<String> {
-        let kv_entry_option = self._get_or_remove_if_expired(&key);
-        KeyValueEntry::extract_string_value_from_kv_entry_ref(kv_entry_option)
+        if let Some(value_entry) = self._get_or_none_if_expired(&key) {
+            ValueEntry::extract_string_value_from_value_entry(value_entry)
+        } else {
+            None
+        }
     }
 
     /// Removes the Key-Value pair for the given Key in the KeyValueStore
@@ -141,7 +133,7 @@ impl KeyValueStore {
     /// and returns the Value (in Vec<u8> type)
     pub fn pop(&mut self, key: String) -> Option<Vec<u8>> {
         match self._remove(&key) {
-            Some(kv_entry) => Some(kv_entry.value),
+            Some(value_entry) => Some(value_entry.value),
             _ => None,
         }
     }
@@ -149,12 +141,42 @@ impl KeyValueStore {
     /// Removes the Key-Value pair for the given Key in the KeyValueStore
     /// and returns the Value (converted to String type)
     pub fn pop_as_string(&mut self, key: String) -> Option<String> {
-        let kv_entry_option = self._remove(&key);
-        KeyValueEntry::extract_string_value_from_kv_entry(kv_entry_option)
+        if let Some(value_entry) = self._remove(&key) {
+            ValueEntry::extract_string_value_from_value_entry(&value_entry)
+        } else {
+            None
+        }
     }
 
     /// Clear all Key-Value pairs from the KeyValueStore
     pub fn clear(&mut self) {
         self._data.clear();
+    }
+}
+
+pub mod private_tests {
+    use super::KeyValueStore;
+    use std::time::Duration;
+
+    #[test]
+    fn test_clear_all_expired_keys() {
+        let mut store = KeyValueStore::new(5000);
+        store.set_with_string_value("ABC".to_string(), "HELLO".to_string(), Some(250));
+        store.set_with_string_value("XYZ".to_string(), "HELLO".to_string(), Some(250));
+        store.set_with_string_value("DEF".to_string(), "HELLO".to_string(), Some(250));
+
+        store.clear_all_expired_keys();
+
+        assert!(store._data.contains_key("ABC"));
+
+        std::thread::sleep(Duration::from_millis(250));
+        assert!(store._data.contains_key("ABC"));
+        assert!(store._data.contains_key("DEF"));
+        assert!(store._data.contains_key("XYZ"));
+
+        store.clear_all_expired_keys();
+        assert_eq!(store._data.contains_key("ABC"), false);
+        assert_eq!(store._data.contains_key("DEF"), false);
+        assert_eq!(store._data.contains_key("XYZ"), false);
     }
 }

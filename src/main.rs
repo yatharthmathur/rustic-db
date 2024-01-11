@@ -7,4 +7,4 @@ fn main() {
 }
 
 #[cfg(test)]
-mod tests;
+mod public_tests;
