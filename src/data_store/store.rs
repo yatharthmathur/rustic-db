@@ -23,33 +23,8 @@ impl ValueEntry {
     }
 
     /// Extract value and convert it to String from KeyValueEntry
-    fn extract_string_value_from_value_entry_ref(
-        value_entry_option: Option<&ValueEntry>,
-    ) -> Option<String> {
-        if value_entry_option.is_none() {
-            return None;
-        }
-
-        // value_entry_option is definitely Some.
-        let value_entry = value_entry_option.unwrap();
+    fn extract_string_value_from_value_entry(value_entry: &ValueEntry) -> Option<String> {
         match String::from_utf8(value_entry.value.to_owned()) {
-            Ok(string) => Some(string),
-            // This case will not happen as all values that
-            // were initially stored in the DB were valid.
-            _ => None,
-        }
-    }
-
-    fn extract_string_value_from_value_entry(
-        value_entry_option: Option<ValueEntry>,
-    ) -> Option<String> {
-        if value_entry_option.is_none() {
-            return None;
-        }
-
-        // value_entry_option is definitely Some.
-        let value_entry = value_entry_option.unwrap();
-        match String::from_utf8(value_entry.value) {
             Ok(string) => Some(string),
             // This case will not happen as all values that
             // were initially stored in the DB were valid.
@@ -102,7 +77,7 @@ impl KeyValueStore {
             ._data
             .iter()
             .filter(|(_, value_entry)| now >= value_entry.expiration)
-            .map(|(key, _)| key.clone())
+            .map(|(key, _)| key.to_owned())
             .collect();
 
         for key in expired_keys {
@@ -142,8 +117,11 @@ impl KeyValueStore {
 
     /// Gets a Value (converted to String type) associated to the Key in the KeyValueStore
     pub fn get_as_string(&mut self, key: String) -> Option<String> {
-        let value_entry_option = self._get_or_none_if_expired(&key);
-        ValueEntry::extract_string_value_from_value_entry_ref(value_entry_option)
+        if let Some(value_entry) = self._get_or_none_if_expired(&key) {
+            ValueEntry::extract_string_value_from_value_entry(value_entry)
+        } else {
+            None
+        }
     }
 
     /// Removes the Key-Value pair for the given Key in the KeyValueStore
@@ -163,8 +141,11 @@ impl KeyValueStore {
     /// Removes the Key-Value pair for the given Key in the KeyValueStore
     /// and returns the Value (converted to String type)
     pub fn pop_as_string(&mut self, key: String) -> Option<String> {
-        let value_entry_option = self._remove(&key);
-        ValueEntry::extract_string_value_from_value_entry(value_entry_option)
+        if let Some(value_entry) = self._remove(&key) {
+            ValueEntry::extract_string_value_from_value_entry(&value_entry)
+        } else {
+            None
+        }
     }
 
     /// Clear all Key-Value pairs from the KeyValueStore
