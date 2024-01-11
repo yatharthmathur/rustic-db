@@ -1,6 +1,4 @@
-use clokwerk::{AsyncScheduler, Job, TimeUnits};
-use std::cmp::Reverse;
-use std::collections::{BinaryHeap, HashMap, VecDeque};
+use std::collections::HashMap;
 use std::time::{Duration, Instant};
 
 /// Each entry of the Key-Value pair in the Data store is this struct.
