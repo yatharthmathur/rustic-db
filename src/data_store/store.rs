@@ -3,7 +3,7 @@ use std::time::{Duration, Instant};
 
 /// Each entry of the Key-Value pair in the Data store is this struct.
 #[derive(Clone)]
-struct ValueEntry {
+pub struct ValueEntry {
     /// Internally all values are stored as a Vector of Bytes
     value: Vec<u8>,
 
@@ -71,7 +71,7 @@ impl KeyValueStore {
         self._data.get(key)
     }
 
-    async fn _clear_all_expired_keys(&mut self) {
+    pub fn clear_all_expired_keys(&mut self) {
         let now = Instant::now();
         let expired_keys: Vec<String> = self
             ._data
@@ -81,8 +81,12 @@ impl KeyValueStore {
             .collect();
 
         for key in expired_keys {
-            self._data.remove(&key);
+            self.remove(key);
         }
+    }
+
+    pub fn get_data(&mut self) -> &HashMap<String, ValueEntry> {
+        &self._data
     }
 
     pub fn contains(&mut self, key: String) -> bool {

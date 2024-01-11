@@ -162,4 +162,19 @@ pub mod tests {
             Some(_) => assert!(false),
         };
     }
+
+    #[test]
+    fn test_clear_all_expired_keys() {
+        let mut store = KeyValueStore::new(5000);
+        store.set_with_string_value("ABC".to_string(), "HELLO".to_string(), Some(250));
+        store.clear_all_expired_keys();
+
+        assert!(store.get_data().contains_key("ABC"));
+
+        std::thread::sleep(Duration::from_millis(250));
+        assert!(store.get_data().contains_key("ABC"));
+
+        store.clear_all_expired_keys();
+        assert_eq!(store.get_data().contains_key("ABC"), false);
+    }
 }
