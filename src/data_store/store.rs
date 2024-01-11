@@ -42,6 +42,7 @@ impl KeyValueStore {
 
     fn _persist_db(&mut self) {
         /// open file
+        /// encrypt
         /// write in binary
         /// close file
         todo!();
