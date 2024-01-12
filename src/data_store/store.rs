@@ -92,7 +92,7 @@ impl KeyValueStore {
     }
 
     /// Gets a Value (in Vec<u8> type) associated to the Key in the KeyValueStore
-    pub fn get_bytes(&mut self, key: String) -> Option<Result<&Vec<u8>, CacheError>> {
+    pub fn get_bytes(&mut self, key: String) -> Option<Result<Vec<u8>, CacheError>> {
         match self._get_or_none_if_expired(&key) {
             Some(value_entry) => Some(value_entry.get_value_as_bytes()),
             _ => None,
@@ -100,7 +100,7 @@ impl KeyValueStore {
     }
 
     /// Gets a Value (converted to String type) associated to the Key in the KeyValueStore
-    pub fn get_string(&mut self, key: String) -> Option<Result<&String, CacheError>> {
+    pub fn get_string(&mut self, key: String) -> Option<Result<String, CacheError>> {
         match self._get_or_none_if_expired(&key) {
             Some(value_entry) => Some(value_entry.get_value_as_string()),
             _ => None,
@@ -116,7 +116,7 @@ impl KeyValueStore {
     /// and returns the Value (in Vec<u8> type)
     pub fn pop_bytes(&mut self, key: String) -> Option<Result<Vec<u8>, CacheError>> {
         match self._remove_and_none_if_expired(&key) {
-            Some(value_entry) => Some(value_entry.get_value_as_bytes().cloned()),
+            Some(value_entry) => Some(value_entry.get_value_as_bytes()),
             _ => None,
         }
     }
@@ -125,7 +125,7 @@ impl KeyValueStore {
     /// and returns the Value (converted to String type)
     pub fn pop_string(&mut self, key: String) -> Option<Result<String, CacheError>> {
         match self._remove_and_none_if_expired(&key) {
-            Some(value_entry) => Some(value_entry.get_value_as_string().cloned()),
+            Some(value_entry) => Some(value_entry.get_value_as_string()),
             _ => None,
         }
     }

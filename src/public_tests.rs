@@ -41,7 +41,14 @@ fn test_set_get_string() {
     let mut store = KeyValueStore::new(0);
     store.set_string("ABC".to_string(), "HELLO".to_string(), Some(5000));
     assert_eq!(
-        *store.get_string("ABC".to_string()).unwrap().unwrap(),
+        store.get_string("ABC".to_string()).unwrap().unwrap(),
+        "HELLO".to_string()
+    );
+
+    // Can set string convertible bytes and fetch it back as string.
+    store.set_bytes("XYZ".to_string(), "HELLO".as_bytes().to_vec(), Some(5000));
+    assert_eq!(
+        store.get_string("ABC".to_string()).unwrap().unwrap(),
         "HELLO".to_string()
     );
 }
@@ -61,8 +68,12 @@ fn test_set_get_bytes() {
     let mut store = KeyValueStore::new(0);
     store.set_bytes("ABC".to_string(), "HELLO".as_bytes().to_vec(), Some(5000));
     assert_eq!(
-        *store.get_bytes("ABC".to_string()).unwrap().unwrap(),
+        store.get_bytes("ABC".to_string()).unwrap().unwrap(),
         "HELLO".as_bytes().to_vec()
+    );
+    assert_eq!(
+        store.get_string("ABC".to_string()).unwrap().unwrap(),
+        "HELLO".to_string()
     );
 }
 

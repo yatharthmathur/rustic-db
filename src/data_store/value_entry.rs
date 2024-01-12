@@ -1,11 +1,13 @@
 use std::{
     collections::{HashMap, HashSet},
+    string::FromUtf8Error,
     time::Instant,
 };
 
 #[derive(Debug)]
 pub enum CacheError {
     InvalidType,
+    InvalidTypeCast(FromUtf8Error),
 }
 
 #[derive(Clone)]
@@ -64,16 +66,21 @@ impl ValueEntry {
         }
     }
 
-    pub fn get_value_as_bytes(&self) -> Result<&Vec<u8>, CacheError> {
+    pub fn get_value_as_bytes(&self) -> Result<Vec<u8>, CacheError> {
         match &self.value {
-            CacheValue::Bytes(bytes) => Ok(&bytes),
+            CacheValue::Bytes(bytes) => Ok(bytes.to_owned()),
+            CacheValue::String(string) => Ok(string.to_owned().into_bytes()),
             _ => Err(CacheError::InvalidType),
         }
     }
 
-    pub fn get_value_as_string(&self) -> Result<&String, CacheError> {
+    pub fn get_value_as_string(&self) -> Result<String, CacheError> {
         match &self.value {
-            CacheValue::String(value_string) => Ok(&value_string),
+            CacheValue::String(value_string) => Ok(value_string.to_owned()),
+            CacheValue::Bytes(value_bytes) => match String::from_utf8(value_bytes.to_owned()) {
+                Err(e) => Err(CacheError::InvalidTypeCast(e)),
+                Ok(string_value) => Ok(string_value),
+            },
             _ => Err(CacheError::InvalidType),
         }
     }
