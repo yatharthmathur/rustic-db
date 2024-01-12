@@ -1,6 +1,5 @@
-use super::value_entry::ValueEntry;
+use super::value_entry::{CacheError, ValueEntry};
 use std::collections::HashMap;
-use std::string::FromUtf8Error;
 use std::time::{Duration, Instant};
 
 /// The main struct of the Key-Value store
@@ -78,37 +77,33 @@ impl KeyValueStore {
     }
 
     /// Inserts a Key-Value(in Vec<u8> type) pair in the KeyValueStore
-    pub fn set(&mut self, key: String, value: Vec<u8>, ttl: Option<u64>) {
+    pub fn set_bytes(&mut self, key: String, value: Vec<u8>, ttl: Option<u64>) {
         let expiration = Instant::now() + Duration::from_millis(ttl.unwrap_or(self.default_ttl));
-        let value_entry = ValueEntry::new(value, expiration);
+        let value_entry = ValueEntry::from_bytes(value, expiration);
         self._insert(&key, &value_entry);
     }
 
     /// Inserts a Key-Value(in String type) pair in the KeyValueStore
     /// Note: it will always be stored as Vec<u8> internally.
-    pub fn set_with_string_value(&mut self, key: String, value: String, ttl: Option<u64>) {
+    pub fn set_string(&mut self, key: String, value: String, ttl: Option<u64>) {
         let expiration = Instant::now() + Duration::from_millis(ttl.unwrap_or(self.default_ttl));
         let value_entry = ValueEntry::from_string(value, expiration);
         self._insert(&key, &value_entry);
     }
 
     /// Gets a Value (in Vec<u8> type) associated to the Key in the KeyValueStore
-    pub fn get(&mut self, key: String) -> Option<&Vec<u8>> {
+    pub fn get_bytes(&mut self, key: String) -> Option<Result<&Vec<u8>, CacheError>> {
         match self._get_or_none_if_expired(&key) {
-            Some(value_entry) => Some(value_entry.value.as_ref()),
+            Some(value_entry) => Some(value_entry.get_value_as_bytes()),
             _ => None,
         }
     }
 
     /// Gets a Value (converted to String type) associated to the Key in the KeyValueStore
-    pub fn get_as_string(&mut self, key: String) -> Option<Result<String, FromUtf8Error>> {
-        if let Some(value_entry) = self._get_or_none_if_expired(&key) {
-            match value_entry.extract_string_value_from_value_entry() {
-                Ok(string_value) => Some(Ok(string_value)),
-                Err(e) => Some(Err(e)),
-            }
-        } else {
-            None
+    pub fn get_string(&mut self, key: String) -> Option<Result<&String, CacheError>> {
+        match self._get_or_none_if_expired(&key) {
+            Some(value_entry) => Some(value_entry.get_value_as_string()),
+            _ => None,
         }
     }
 
@@ -119,24 +114,19 @@ impl KeyValueStore {
 
     /// Removes the Key-Value pair for the given Key in the KeyValueStore
     /// and returns the Value (in Vec<u8> type)
-    pub fn pop(&mut self, key: String) -> Option<Vec<u8>> {
-        if let Some(value_entry) = self._remove_and_none_if_expired(&key) {
-            Some(value_entry.value)
-        } else {
-            None
+    pub fn pop_bytes(&mut self, key: String) -> Option<Result<Vec<u8>, CacheError>> {
+        match self._remove_and_none_if_expired(&key) {
+            Some(value_entry) => Some(value_entry.get_value_as_bytes().cloned()),
+            _ => None,
         }
     }
 
     /// Removes the Key-Value pair for the given Key in the KeyValueStore
     /// and returns the Value (converted to String type)
-    pub fn pop_as_string(&mut self, key: String) -> Option<Result<String, FromUtf8Error>> {
-        if let Some(value_entry) = self._remove_and_none_if_expired(&key) {
-            match value_entry.extract_string_value_from_value_entry() {
-                Ok(string_value) => Some(Ok(string_value)),
-                Err(e) => Some(Err(e)),
-            }
-        } else {
-            None
+    pub fn pop_string(&mut self, key: String) -> Option<Result<String, CacheError>> {
+        match self._remove_and_none_if_expired(&key) {
+            Some(value_entry) => Some(value_entry.get_value_as_string().cloned()),
+            _ => None,
         }
     }
 
