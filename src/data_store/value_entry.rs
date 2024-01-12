@@ -161,6 +161,15 @@ impl ValueEntry {
                 .iter_mut()
                 .map(|(k, v)| (k.to_string(), v.to_string()))
                 .collect()),
+            ValueType::Set(set) => Ok(set
+                .iter()
+                .fold(HashMap::new(), |mut map, item| {
+                    *map.entry(item).or_insert(0) += 1;
+                    map
+                })
+                .iter_mut()
+                .map(|(k, v)| (k.to_string(), v.to_string()))
+                .collect()),
             _ => Err(ValueError::TypeConversionImpossible),
         }
     }
