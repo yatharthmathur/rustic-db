@@ -208,4 +208,7 @@ fn test_incr_decr() {
         store.get_string("ABC".to_string()).unwrap().unwrap(),
         "61".to_string()
     );
+
+    store.set_string("xyz".to_string(), "ab123x".to_string(), None);
+    assert!(store.incr("xyz".to_string(), Some(10)).unwrap().is_err())
 }
