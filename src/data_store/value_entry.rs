@@ -1,33 +1,12 @@
 use std::{
     collections::{vec_deque::VecDeque, HashMap, HashSet},
-    num::{ParseIntError, TryFromIntError},
-    string::FromUtf8Error,
     time::Instant,
 };
 
-#[derive(Debug)]
-pub enum TypeConversionError {
-    ParseIntError(ParseIntError),
-    FromUtf8Error(FromUtf8Error),
-    TryFromIntError(TryFromIntError),
-    // Add other type cast error variants as needed
-}
-
-#[derive(Debug)]
-pub enum ValueError {
-    TypeConversionImpossible,
-    TypeConversionError(TypeConversionError),
-}
-
-#[derive(Clone)]
-pub enum ValueType {
-    Integer64(i64),
-    Bytes(Vec<u8>),
-    String(String),
-    Deque(VecDeque<String>),
-    Set(HashSet<String>),
-    HashMap(HashMap<String, String>),
-}
+use super::{
+    errors::{TypeConversionError, ValueError},
+    types::ValueType,
+};
 
 /// Each entry of the Key-Value pair in the Data store is this struct.
 #[derive(Clone)]

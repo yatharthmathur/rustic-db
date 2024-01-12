@@ -5,6 +5,3 @@ fn main() {
     println!("Hello, rustics!");
     let _store = KeyValueStore::new(0);
 }
-
-#[cfg(test)]
-mod public_tests;
