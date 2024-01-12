@@ -135,6 +135,9 @@ impl ValueEntry {
             ValueType::String(string) => Ok(HashSet::from_iter(
                 string.chars().map(|item| item.to_string()),
             )),
+            ValueType::Deque(list) => {
+                Ok(HashSet::from_iter(list.iter().map(|item| item.to_owned())))
+            }
             _ => Err(ValueError::TypeConversionImpossible),
         }
     }
@@ -149,6 +152,15 @@ impl ValueEntry {
     pub fn get_value_as_hmap(&self) -> Result<HashMap<String, String>, ValueError> {
         match &self.value {
             ValueType::HashMap(hmap) => Ok(hmap.to_owned()),
+            ValueType::Deque(list) => Ok(list
+                .iter()
+                .fold(HashMap::new(), |mut map, item| {
+                    *map.entry(item).or_insert(0) += 1;
+                    map
+                })
+                .iter_mut()
+                .map(|(k, v)| (k.to_string(), v.to_string()))
+                .collect()),
             _ => Err(ValueError::TypeConversionImpossible),
         }
     }
