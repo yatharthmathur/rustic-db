@@ -12,7 +12,14 @@ pub enum TypeConversionError {
 }
 
 #[derive(Debug)]
+pub enum TypeConversionImpossible {
+    IncompatibleTypes,
+    AsReference,
+    AsMutable,
+}
+
+#[derive(Debug)]
 pub enum ValueError {
-    TypeConversionImpossible,
+    TypeConversionImpossible(TypeConversionImpossible),
     TypeConversionError(TypeConversionError),
 }

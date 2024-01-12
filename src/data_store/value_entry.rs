@@ -4,7 +4,7 @@ use std::{
 };
 
 use super::{
-    errors::{TypeConversionError, ValueError},
+    errors::{TypeConversionError, TypeConversionImpossible, ValueError},
     types::ValueType,
 };
 
@@ -78,7 +78,9 @@ impl ValueEntry {
                     TypeConversionError::ParseIntError(e),
                 )),
             },
-            _ => Err(ValueError::TypeConversionImpossible),
+            _ => Err(ValueError::TypeConversionImpossible(
+                TypeConversionImpossible::IncompatibleTypes,
+            )),
         }
     }
 
@@ -87,7 +89,9 @@ impl ValueEntry {
             ValueType::Bytes(bytes) => Ok(bytes.to_owned()),
             ValueType::String(string) => Ok(string.to_owned().into_bytes()),
             ValueType::Integer64(integer) => Ok(integer.to_le_bytes().to_vec()),
-            _ => Err(ValueError::TypeConversionImpossible),
+            _ => Err(ValueError::TypeConversionImpossible(
+                TypeConversionImpossible::IncompatibleTypes,
+            )),
         }
     }
 
@@ -101,7 +105,9 @@ impl ValueEntry {
                 Ok(string) => Ok(string),
             },
             ValueType::Integer64(integer) => Ok(integer.to_string()),
-            _ => Err(ValueError::TypeConversionImpossible),
+            _ => Err(ValueError::TypeConversionImpossible(
+                TypeConversionImpossible::IncompatibleTypes,
+            )),
         }
     }
 
@@ -111,21 +117,27 @@ impl ValueEntry {
             ValueType::String(string) => Ok(string.chars().map(|ch| ch.to_string()).collect()),
             ValueType::Bytes(bytes) => Ok(bytes.iter().map(|byte| byte.to_string()).collect()),
             ValueType::Set(hash_set) => Ok(hash_set.iter().map(|val| val.to_string()).collect()),
-            _ => Err(ValueError::TypeConversionImpossible),
+            _ => Err(ValueError::TypeConversionImpossible(
+                TypeConversionImpossible::IncompatibleTypes,
+            )),
         }
     }
 
     pub fn get_value_as_deque(&self) -> Result<&VecDeque<String>, ValueError> {
         match &self.value {
             ValueType::Deque(list) => Ok(list),
-            _ => Err(ValueError::TypeConversionImpossible),
+            _ => Err(ValueError::TypeConversionImpossible(
+                TypeConversionImpossible::AsReference,
+            )),
         }
     }
 
     pub fn get_value_as_mut_deque(&mut self) -> Result<&mut VecDeque<String>, ValueError> {
         match &mut self.value {
             ValueType::Deque(list) => Ok(list),
-            _ => Err(ValueError::TypeConversionImpossible),
+            _ => Err(ValueError::TypeConversionImpossible(
+                TypeConversionImpossible::AsMutable,
+            )),
         }
     }
 
@@ -138,14 +150,18 @@ impl ValueEntry {
             ValueType::Deque(list) => {
                 Ok(HashSet::from_iter(list.iter().map(|item| item.to_owned())))
             }
-            _ => Err(ValueError::TypeConversionImpossible),
+            _ => Err(ValueError::TypeConversionImpossible(
+                TypeConversionImpossible::IncompatibleTypes,
+            )),
         }
     }
 
     pub fn get_value_as_mut_hset(&mut self) -> Result<&mut HashSet<String>, ValueError> {
         match &mut self.value {
             ValueType::Set(hash_set) => Ok(hash_set),
-            _ => Err(ValueError::TypeConversionImpossible),
+            _ => Err(ValueError::TypeConversionImpossible(
+                TypeConversionImpossible::AsMutable,
+            )),
         }
     }
 
@@ -170,14 +186,18 @@ impl ValueEntry {
                 .iter_mut()
                 .map(|(k, v)| (k.to_string(), v.to_string()))
                 .collect()),
-            _ => Err(ValueError::TypeConversionImpossible),
+            _ => Err(ValueError::TypeConversionImpossible(
+                TypeConversionImpossible::IncompatibleTypes,
+            )),
         }
     }
 
     pub fn get_value_as_mut_hmap(&mut self) -> Result<&mut HashMap<String, String>, ValueError> {
         match &mut self.value {
             ValueType::HashMap(hmap) => Ok(hmap),
-            _ => Err(ValueError::TypeConversionImpossible),
+            _ => Err(ValueError::TypeConversionImpossible(
+                TypeConversionImpossible::AsMutable,
+            )),
         }
     }
 
