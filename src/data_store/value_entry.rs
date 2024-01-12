@@ -135,7 +135,14 @@ impl ValueEntry {
         }
     }
 
-    pub fn get_value_as_deque(&mut self) -> Result<&mut VecDeque<String>, ValueError> {
+    pub fn get_value_as_deque(&self) -> Result<&VecDeque<String>, ValueError> {
+        match &self.value {
+            ValueType::Deque(list) => Ok(list),
+            _ => Err(ValueError::TypeConversionImpossible),
+        }
+    }
+
+    pub fn get_value_as_mut_deque(&mut self) -> Result<&mut VecDeque<String>, ValueError> {
         match &mut self.value {
             ValueType::Deque(list) => Ok(list),
             _ => Err(ValueError::TypeConversionImpossible),

@@ -1,5 +1,5 @@
 use super::value_entry::{TypeConversionError, ValueEntry, ValueError, ValueType};
-use std::collections::{vec_deque::VecDeque, HashMap};
+use std::collections::HashMap;
 use std::time::{Duration, Instant};
 
 /// The main struct of the Key-Value store
@@ -38,7 +38,7 @@ impl KeyValueStore {
         }
     }
 
-    fn _get_or_none_if_expired(&mut self, key: &String) -> Option<&ValueEntry> {
+    fn _get_or_none_if_expired(&self, key: &String) -> Option<&ValueEntry> {
         if let Some(value_entry) = self._data.get(key) {
             if value_entry.is_expired_entry(None) {
                 return None;
@@ -72,12 +72,12 @@ impl KeyValueStore {
 
     /// Check whether the key exists in the store.
     /// NOTE: this returns true, even if the key is expired.
-    pub fn contains_key(&mut self, key: String) -> bool {
+    pub fn contains_key(&self, key: String) -> bool {
         self._data.contains_key(&key)
     }
 
     /// Check whether a key is expired or not.
-    pub fn is_expired(&mut self, key: String) -> Option<bool> {
+    pub fn is_expired(&self, key: String) -> Option<bool> {
         if let Some(value_entry) = self._data.get(&key) {
             Some(value_entry.is_expired_entry(None))
         } else {
@@ -114,7 +114,7 @@ impl KeyValueStore {
     }
 
     /// Gets a Value (in Vec<u8> type) associated to the Key in the KeyValueStore
-    pub fn get_bytes(&mut self, key: String) -> Option<Result<Vec<u8>, ValueError>> {
+    pub fn get_bytes(&self, key: String) -> Option<Result<Vec<u8>, ValueError>> {
         match self._get_or_none_if_expired(&key) {
             Some(value_entry) => Some(value_entry.get_value_as_bytes()),
             _ => None,
@@ -122,7 +122,7 @@ impl KeyValueStore {
     }
 
     /// Gets a Value (converted to String type) associated to the Key in the KeyValueStore
-    pub fn get_string(&mut self, key: String) -> Option<Result<String, ValueError>> {
+    pub fn get_string(&self, key: String) -> Option<Result<String, ValueError>> {
         match self._get_or_none_if_expired(&key) {
             Some(value_entry) => Some(value_entry.get_value_as_string()),
             _ => None,
@@ -130,7 +130,7 @@ impl KeyValueStore {
     }
 
     /// Gets a Value (converted to String type) associated to the Key in the KeyValueStore
-    pub fn get_i64(&mut self, key: String) -> Option<Result<i64, ValueError>> {
+    pub fn get_i64(&self, key: String) -> Option<Result<i64, ValueError>> {
         match self._get_or_none_if_expired(&key) {
             Some(value_entry) => Some(value_entry.get_value_as_i64()),
             _ => None,
@@ -138,7 +138,7 @@ impl KeyValueStore {
     }
 
     /// Gets a Value (converted to Vec<String> type) associated to the Key in the KeyValueStore
-    pub fn get_list(&mut self, key: String) -> Option<Result<Vec<String>, ValueError>> {
+    pub fn get_list(&self, key: String) -> Option<Result<Vec<String>, ValueError>> {
         match self._get_or_none_if_expired(&key) {
             Some(value_entry) => Some(value_entry.get_value_as_list()),
             _ => None,
@@ -227,9 +227,9 @@ impl KeyValueStore {
     }
 
     /// Append to the back of a list
-    pub fn list_rpush(&mut self, key: String, value: String) -> Option<Result<String, ValueError>> {
+    pub fn list_pushb(&mut self, key: String, value: String) -> Option<Result<String, ValueError>> {
         match self._get_mut_or_none_if_expired(&key) {
-            Some(value_entry) => match value_entry.get_value_as_deque() {
+            Some(value_entry) => match value_entry.get_value_as_mut_deque() {
                 Ok(list) => {
                     list.push_back(value.to_owned());
                     Some(Ok(value))
@@ -241,9 +241,9 @@ impl KeyValueStore {
     }
 
     /// Append to the front of a list
-    pub fn list_lpush(&mut self, key: String, value: String) -> Option<Result<String, ValueError>> {
+    pub fn list_pushf(&mut self, key: String, value: String) -> Option<Result<String, ValueError>> {
         match self._get_mut_or_none_if_expired(&key) {
-            Some(value_entry) => match value_entry.get_value_as_deque() {
+            Some(value_entry) => match value_entry.get_value_as_mut_deque() {
                 Ok(list) => {
                     list.push_front(value.to_owned());
                     Some(Ok(value))
@@ -255,9 +255,9 @@ impl KeyValueStore {
     }
 
     /// pop from the front of a list
-    pub fn list_lpop(&mut self, key: String) -> Option<Result<String, ValueError>> {
+    pub fn list_popf(&mut self, key: String) -> Option<Result<String, ValueError>> {
         match self._get_mut_or_none_if_expired(&key) {
-            Some(value_entry) => match value_entry.get_value_as_deque() {
+            Some(value_entry) => match value_entry.get_value_as_mut_deque() {
                 Ok(list) => {
                     let opt_value = list.pop_front();
                     if let Some(value) = opt_value {
@@ -273,9 +273,9 @@ impl KeyValueStore {
     }
 
     /// pop from the back of a list
-    pub fn list_rpop(&mut self, key: String) -> Option<Result<String, ValueError>> {
+    pub fn list_popb(&mut self, key: String) -> Option<Result<String, ValueError>> {
         match self._get_mut_or_none_if_expired(&key) {
-            Some(value_entry) => match value_entry.get_value_as_deque() {
+            Some(value_entry) => match value_entry.get_value_as_mut_deque() {
                 Ok(list) => {
                     let opt_value = list.pop_back();
                     if let Some(value) = opt_value {
@@ -290,9 +290,45 @@ impl KeyValueStore {
         }
     }
 
+    /// get front of the list
+    pub fn list_front(&self, key: String) -> Option<Result<String, ValueError>> {
+        match self._get_or_none_if_expired(&key) {
+            Some(value_entry) => match value_entry.get_value_as_deque() {
+                Ok(list) => {
+                    let opt_value = list.front();
+                    if let Some(value) = opt_value {
+                        Some(Ok(value.to_owned()))
+                    } else {
+                        None
+                    }
+                }
+                Err(e) => Some(Err(e)),
+            },
+            _ => None,
+        }
+    }
+
+    /// get back of the list
+    pub fn list_back(&self, key: String) -> Option<Result<String, ValueError>> {
+        match self._get_or_none_if_expired(&key) {
+            Some(value_entry) => match value_entry.get_value_as_deque() {
+                Ok(list) => {
+                    let opt_value = list.back();
+                    if let Some(value) = opt_value {
+                        Some(Ok(value.to_owned()))
+                    } else {
+                        None
+                    }
+                }
+                Err(e) => Some(Err(e)),
+            },
+            _ => None,
+        }
+    }
+
     /// size of the list
-    pub fn list_size(&mut self, key: String) -> Option<Result<usize, ValueError>> {
-        match self._data.get_mut(&key) {
+    pub fn list_size(&self, key: String) -> Option<Result<usize, ValueError>> {
+        match self._data.get(&key) {
             Some(value_entry) => match value_entry.get_value_as_deque() {
                 Ok(list) => Some(Ok(list.len())),
                 Err(e) => Some(Err(e)),
