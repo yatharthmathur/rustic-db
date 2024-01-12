@@ -25,7 +25,7 @@ pub enum ValueType {
     Bytes(Vec<u8>),
     String(String),
     Deque(VecDeque<String>),
-    HashSet(HashSet<String>),
+    Set(HashSet<String>),
     HashMap(HashMap<String, String>),
 }
 
@@ -76,9 +76,9 @@ impl ValueEntry {
         }
     }
 
-    pub fn from_hashset(value: HashSet<String>, expiration: Instant) -> Self {
+    pub fn from_set(value: HashSet<String>, expiration: Instant) -> Self {
         ValueEntry {
-            value: ValueType::HashSet(value),
+            value: ValueType::Set(value),
             expiration,
         }
     }
@@ -131,6 +131,7 @@ impl ValueEntry {
             ValueType::Deque(list) => Ok(Vec::from(list.to_owned())),
             ValueType::String(string) => Ok(string.chars().map(|ch| ch.to_string()).collect()),
             ValueType::Bytes(bytes) => Ok(bytes.iter().map(|byte| byte.to_string()).collect()),
+            ValueType::Set(hash_set) => Ok(hash_set.iter().map(|val| val.to_string()).collect()),
             _ => Err(ValueError::TypeConversionImpossible),
         }
     }
@@ -145,6 +146,23 @@ impl ValueEntry {
     pub fn get_value_as_mut_deque(&mut self) -> Result<&mut VecDeque<String>, ValueError> {
         match &mut self.value {
             ValueType::Deque(list) => Ok(list),
+            _ => Err(ValueError::TypeConversionImpossible),
+        }
+    }
+
+    pub fn get_value_as_hset(&self) -> Result<HashSet<String>, ValueError> {
+        match &self.value {
+            ValueType::Set(hash_set) => Ok(hash_set.to_owned()),
+            ValueType::String(string) => Ok(HashSet::from_iter(
+                string.chars().map(|item| item.to_string()),
+            )),
+            _ => Err(ValueError::TypeConversionImpossible),
+        }
+    }
+
+    pub fn get_value_as_mut_hset(&mut self) -> Result<&mut HashSet<String>, ValueError> {
+        match &mut self.value {
+            ValueType::Set(hash_set) => Ok(hash_set),
             _ => Err(ValueError::TypeConversionImpossible),
         }
     }
