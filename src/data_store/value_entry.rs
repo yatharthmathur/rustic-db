@@ -1,17 +1,27 @@
 use std::{
     collections::{HashMap, HashSet},
+    num::{ParseIntError, TryFromIntError},
     string::FromUtf8Error,
     time::Instant,
 };
 
 #[derive(Debug)]
-pub enum CacheError {
-    InvalidType,
-    InvalidTypeCast(FromUtf8Error),
+pub enum TypeConversionError {
+    ParseIntError(ParseIntError),
+    FromUtf8Error(FromUtf8Error),
+    TryFromIntError(TryFromIntError),
+    // Add other type cast error variants as needed
+}
+
+#[derive(Debug)]
+pub enum ValueError {
+    TypeConversionImpossible,
+    TypeConversionError(TypeConversionError),
 }
 
 #[derive(Clone)]
-enum CacheValue {
+pub enum ValueType {
+    Integer64(i64),
     Bytes(Vec<u8>),
     String(String),
     List(Vec<String>),
@@ -23,7 +33,7 @@ enum CacheValue {
 #[derive(Clone)]
 pub struct ValueEntry {
     /// Internally all values are stored as a Vector of Bytes
-    pub value: CacheValue,
+    pub value: ValueType,
 
     /// Expiration datetime of the given key is stored here.
     pub expiration: Instant,
@@ -31,57 +41,81 @@ pub struct ValueEntry {
 }
 
 impl ValueEntry {
+    pub fn from_i64(value: i64, expiration: Instant) -> Self {
+        ValueEntry {
+            value: ValueType::Integer64(value),
+            expiration,
+        }
+    }
+
     pub fn from_bytes(value: Vec<u8>, expiration: Instant) -> Self {
         ValueEntry {
-            value: CacheValue::Bytes(value),
+            value: ValueType::Bytes(value),
             expiration,
         }
     }
 
     pub fn from_string(value: String, expiration: Instant) -> Self {
         ValueEntry {
-            value: CacheValue::String(value),
+            value: ValueType::String(value),
             expiration,
         }
     }
 
     pub fn from_list(value: Vec<String>, expiration: Instant) -> Self {
         ValueEntry {
-            value: CacheValue::List(value),
+            value: ValueType::List(value),
             expiration,
         }
     }
 
     pub fn from_hashset(value: HashSet<String>, expiration: Instant) -> Self {
         ValueEntry {
-            value: CacheValue::HashSet(value),
+            value: ValueType::HashSet(value),
             expiration,
         }
     }
 
     pub fn from_hashmap(value: HashMap<String, String>, expiration: Instant) -> Self {
         ValueEntry {
-            value: CacheValue::HashMap(value),
+            value: ValueType::HashMap(value),
             expiration,
         }
     }
 
-    pub fn get_value_as_bytes(&self) -> Result<Vec<u8>, CacheError> {
+    pub fn get_value_as_i64(&self) -> Result<i64, ValueError> {
         match &self.value {
-            CacheValue::Bytes(bytes) => Ok(bytes.to_owned()),
-            CacheValue::String(string) => Ok(string.to_owned().into_bytes()),
-            _ => Err(CacheError::InvalidType),
+            ValueType::Integer64(integer) => Ok(integer.to_owned()),
+            ValueType::String(string) => match string.parse::<i64>() {
+                Ok(integer_value) => Ok(integer_value),
+                Err(e) => Err(ValueError::TypeConversionError(
+                    TypeConversionError::ParseIntError(e),
+                )),
+            },
+            _ => Err(ValueError::TypeConversionImpossible),
         }
     }
 
-    pub fn get_value_as_string(&self) -> Result<String, CacheError> {
+    pub fn get_value_as_bytes(&self) -> Result<Vec<u8>, ValueError> {
         match &self.value {
-            CacheValue::String(value_string) => Ok(value_string.to_owned()),
-            CacheValue::Bytes(value_bytes) => match String::from_utf8(value_bytes.to_owned()) {
-                Err(e) => Err(CacheError::InvalidTypeCast(e)),
+            ValueType::Bytes(bytes) => Ok(bytes.to_owned()),
+            ValueType::String(string) => Ok(string.to_owned().into_bytes()),
+            ValueType::Integer64(integer) => Ok(integer.to_le_bytes().to_vec()),
+            _ => Err(ValueError::TypeConversionImpossible),
+        }
+    }
+
+    pub fn get_value_as_string(&self) -> Result<String, ValueError> {
+        match &self.value {
+            ValueType::String(value_string) => Ok(value_string.to_owned()),
+            ValueType::Bytes(value_bytes) => match String::from_utf8(value_bytes.to_owned()) {
+                Err(e) => Err(ValueError::TypeConversionError(
+                    TypeConversionError::FromUtf8Error(e),
+                )),
                 Ok(string_value) => Ok(string_value),
             },
-            _ => Err(CacheError::InvalidType),
+            ValueType::Integer64(value_integer) => Ok(value_integer.to_string()),
+            _ => Err(ValueError::TypeConversionImpossible),
         }
     }
 
