@@ -62,6 +62,26 @@ impl KeyValueStore {
         }
     }
 
+    /// Removes a key-value pair for a provided hmap_key from the hash map associated with the storage key
+    /// also returns the pair
+    pub fn hmap_remove(
+        &mut self,
+        key: String,
+        hmap_key: String,
+    ) -> Option<Result<(String, String), ValueError>> {
+        match self._get_mut_hmap(key) {
+            Some(Ok(hmap)) => {
+                if let Some(value) = hmap.remove_entry(&hmap_key) {
+                    Some(Ok(value))
+                } else {
+                    None
+                }
+            }
+            Some(Err(e)) => Some(Err(e)),
+            None => None,
+        }
+    }
+
     /// Checks if a hmap_key is present in the hmap associated with a key
     pub fn hmap_contains_key(
         &self,
