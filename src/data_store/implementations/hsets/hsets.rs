@@ -8,7 +8,7 @@ impl KeyValueStore {
     /// Inserts a Key-Value(in HashSet<String> type) pair in the KeyValueStore
     pub fn set_hset(&mut self, key: String, value: Vec<String>, ttl: Option<u64>) {
         let expiration = Instant::now() + Duration::from_millis(ttl.unwrap_or(self.default_ttl));
-        let value_entry = ValueEntry::from_set(HashSet::from_iter(value), expiration);
+        let value_entry = ValueEntry::from_hset(HashSet::from_iter(value), expiration);
         self._insert(&key, &value_entry);
     }
 
@@ -22,10 +22,7 @@ impl KeyValueStore {
 
     fn _get_mut_hset(&mut self, key: String) -> Option<Result<&mut HashSet<String>, ValueError>> {
         match self._get_mut_or_none_if_expired(&key) {
-            Some(value_entry) => match value_entry.get_value_as_mut_hset() {
-                Ok(hset) => Some(Ok(hset)),
-                Err(e) => Some(Err(e)),
-            },
+            Some(value_entry) => Some(value_entry.get_value_as_mut_hset()),
             None => None,
         }
     }

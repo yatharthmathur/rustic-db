@@ -55,7 +55,7 @@ impl ValueEntry {
         }
     }
 
-    pub fn from_set(value: HashSet<String>, expiration: Instant) -> Self {
+    pub fn from_hset(value: HashSet<String>, expiration: Instant) -> Self {
         ValueEntry {
             value: ValueType::Set(value),
             expiration,
@@ -142,6 +142,20 @@ impl ValueEntry {
     pub fn get_value_as_mut_hset(&mut self) -> Result<&mut HashSet<String>, ValueError> {
         match &mut self.value {
             ValueType::Set(hash_set) => Ok(hash_set),
+            _ => Err(ValueError::TypeConversionImpossible),
+        }
+    }
+
+    pub fn get_value_as_hmap(&self) -> Result<HashMap<String, String>, ValueError> {
+        match &self.value {
+            ValueType::HashMap(hmap) => Ok(hmap.to_owned()),
+            _ => Err(ValueError::TypeConversionImpossible),
+        }
+    }
+
+    pub fn get_value_as_mut_hmap(&mut self) -> Result<&mut HashMap<String, String>, ValueError> {
+        match &mut self.value {
+            ValueType::HashMap(hmap) => Ok(hmap),
             _ => Err(ValueError::TypeConversionImpossible),
         }
     }
