@@ -1,5 +1,5 @@
 use std::{
-    collections::{HashMap, HashSet},
+    collections::{vec_deque::VecDeque, HashMap, HashSet},
     num::{ParseIntError, TryFromIntError},
     string::FromUtf8Error,
     time::Instant,
@@ -24,7 +24,7 @@ pub enum ValueType {
     Integer64(i64),
     Bytes(Vec<u8>),
     String(String),
-    List(Vec<String>),
+    Deque(VecDeque<String>),
     HashSet(HashSet<String>),
     HashMap(HashMap<String, String>),
 }
@@ -64,7 +64,14 @@ impl ValueEntry {
 
     pub fn from_list(value: Vec<String>, expiration: Instant) -> Self {
         ValueEntry {
-            value: ValueType::List(value),
+            value: ValueType::Deque(VecDeque::from(value)),
+            expiration,
+        }
+    }
+
+    pub fn from_deque(value: VecDeque<String>, expiration: Instant) -> Self {
+        ValueEntry {
+            value: ValueType::Deque(value),
             expiration,
         }
     }
@@ -87,7 +94,7 @@ impl ValueEntry {
         match &self.value {
             ValueType::Integer64(integer) => Ok(integer.to_owned()),
             ValueType::String(string) => match string.parse::<i64>() {
-                Ok(integer_value) => Ok(integer_value),
+                Ok(integer) => Ok(integer),
                 Err(e) => Err(ValueError::TypeConversionError(
                     TypeConversionError::ParseIntError(e),
                 )),
@@ -107,14 +114,30 @@ impl ValueEntry {
 
     pub fn get_value_as_string(&self) -> Result<String, ValueError> {
         match &self.value {
-            ValueType::String(value_string) => Ok(value_string.to_owned()),
-            ValueType::Bytes(value_bytes) => match String::from_utf8(value_bytes.to_owned()) {
+            ValueType::String(string) => Ok(string.to_owned()),
+            ValueType::Bytes(bytes) => match String::from_utf8(bytes.to_owned()) {
                 Err(e) => Err(ValueError::TypeConversionError(
                     TypeConversionError::FromUtf8Error(e),
                 )),
-                Ok(string_value) => Ok(string_value),
+                Ok(string) => Ok(string),
             },
-            ValueType::Integer64(value_integer) => Ok(value_integer.to_string()),
+            ValueType::Integer64(integer) => Ok(integer.to_string()),
+            _ => Err(ValueError::TypeConversionImpossible),
+        }
+    }
+
+    pub fn get_value_as_list(&self) -> Result<Vec<String>, ValueError> {
+        match &self.value {
+            ValueType::Deque(list) => Ok(Vec::from(list.to_owned())),
+            ValueType::String(string) => Ok(string.chars().map(|ch| ch.to_string()).collect()),
+            ValueType::Bytes(bytes) => Ok(bytes.iter().map(|byte| byte.to_string()).collect()),
+            _ => Err(ValueError::TypeConversionImpossible),
+        }
+    }
+
+    pub fn get_value_as_deque(&mut self) -> Result<&mut VecDeque<String>, ValueError> {
+        match &mut self.value {
+            ValueType::Deque(list) => Ok(list),
             _ => Err(ValueError::TypeConversionImpossible),
         }
     }

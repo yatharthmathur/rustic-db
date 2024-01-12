@@ -1,5 +1,5 @@
 use super::value_entry::{TypeConversionError, ValueEntry, ValueError, ValueType};
-use std::collections::HashMap;
+use std::collections::{vec_deque::VecDeque, HashMap};
 use std::time::{Duration, Instant};
 
 /// The main struct of the Key-Value store
@@ -45,6 +45,15 @@ impl KeyValueStore {
             }
         };
         self._data.get(key)
+    }
+
+    fn _get_mut_or_none_if_expired(&mut self, key: &String) -> Option<&mut ValueEntry> {
+        if let Some(value_entry) = self._data.get_mut(key) {
+            if value_entry.is_expired_entry(None) {
+                return None;
+            }
+        };
+        self._data.get_mut(key)
     }
 
     pub fn clear_all_expired_keys(&mut self) {
@@ -97,39 +106,11 @@ impl KeyValueStore {
         self._insert(&key, &value_entry);
     }
 
-    fn _add(&mut self, key: String, value: i64) -> Option<Result<i64, ValueError>> {
-        if let Some(value_entry) = self._data.get_mut(&key) {
-            match value_entry.get_value_as_i64() {
-                Ok(old_value) => {
-                    let updated_integer_value = old_value + value;
-                    value_entry.value = ValueType::Integer64(updated_integer_value);
-                    Some(Ok(updated_integer_value))
-                }
-                Err(e) => Some(Err(e)),
-            }
-        } else {
-            None
-        }
-    }
-
-    /// decrement an existing value associated to key by a certain number.
-    pub fn decr(&mut self, key: String, by: Option<u64>) -> Option<Result<i64, ValueError>> {
-        match i64::try_from(by.unwrap_or(1)) {
-            Ok(value) => self._add(key, -value),
-            Err(e) => Some(Err(ValueError::TypeConversionError(
-                TypeConversionError::TryFromIntError(e),
-            ))),
-        }
-    }
-
-    /// increment an existing value associated to a key by a certain number.
-    pub fn incr(&mut self, key: String, by: Option<u64>) -> Option<Result<i64, ValueError>> {
-        match i64::try_from(by.unwrap_or(1)) {
-            Ok(value) => self._add(key, value),
-            Err(e) => Some(Err(ValueError::TypeConversionError(
-                TypeConversionError::TryFromIntError(e),
-            ))),
-        }
+    /// Inserts a Key-Value(in Vec<String> type) pair in the KeyValueStore
+    pub fn set_list(&mut self, key: String, value: Vec<String>, ttl: Option<u64>) {
+        let expiration = Instant::now() + Duration::from_millis(ttl.unwrap_or(self.default_ttl));
+        let value_entry = ValueEntry::from_list(value, expiration);
+        self._insert(&key, &value_entry);
     }
 
     /// Gets a Value (in Vec<u8> type) associated to the Key in the KeyValueStore
@@ -152,6 +133,14 @@ impl KeyValueStore {
     pub fn get_i64(&mut self, key: String) -> Option<Result<i64, ValueError>> {
         match self._get_or_none_if_expired(&key) {
             Some(value_entry) => Some(value_entry.get_value_as_i64()),
+            _ => None,
+        }
+    }
+
+    /// Gets a Value (converted to Vec<String> type) associated to the Key in the KeyValueStore
+    pub fn get_list(&mut self, key: String) -> Option<Result<Vec<String>, ValueError>> {
+        match self._get_or_none_if_expired(&key) {
+            Some(value_entry) => Some(value_entry.get_value_as_list()),
             _ => None,
         }
     }
@@ -188,8 +177,127 @@ impl KeyValueStore {
         }
     }
 
+    /// Removes the Key-Value pair for the given Key in the KeyValueStore
+    /// and returns the Value (converted to Vec<String> type)
+    pub fn pop_list(&mut self, key: String) -> Option<Result<Vec<String>, ValueError>> {
+        match self._remove_and_none_if_expired(&key) {
+            Some(value_entry) => Some(value_entry.get_value_as_list()),
+            _ => None,
+        }
+    }
+
     /// Clear all Key-Value pairs from the KeyValueStore
     pub fn clear(&mut self) {
         self._data.clear();
+    }
+
+    fn _add(&mut self, key: String, value: i64) -> Option<Result<i64, ValueError>> {
+        if let Some(value_entry) = self._data.get_mut(&key) {
+            match value_entry.get_value_as_i64() {
+                Ok(old_value) => {
+                    let updated_integer_value = old_value + value;
+                    value_entry.value = ValueType::Integer64(updated_integer_value);
+                    Some(Ok(updated_integer_value))
+                }
+                Err(e) => Some(Err(e)),
+            }
+        } else {
+            None
+        }
+    }
+
+    /// decrement an existing value associated to key by a certain number.
+    pub fn decr(&mut self, key: String, by: Option<u64>) -> Option<Result<i64, ValueError>> {
+        match i64::try_from(by.unwrap_or(1)) {
+            Ok(value) => self._add(key, -value),
+            Err(e) => Some(Err(ValueError::TypeConversionError(
+                TypeConversionError::TryFromIntError(e),
+            ))),
+        }
+    }
+
+    /// increment an existing value associated to a key by a certain number.
+    pub fn incr(&mut self, key: String, by: Option<u64>) -> Option<Result<i64, ValueError>> {
+        match i64::try_from(by.unwrap_or(1)) {
+            Ok(value) => self._add(key, value),
+            Err(e) => Some(Err(ValueError::TypeConversionError(
+                TypeConversionError::TryFromIntError(e),
+            ))),
+        }
+    }
+
+    /// Append to the back of a list
+    pub fn list_rpush(&mut self, key: String, value: String) -> Option<Result<String, ValueError>> {
+        match self._get_mut_or_none_if_expired(&key) {
+            Some(value_entry) => match value_entry.get_value_as_deque() {
+                Ok(list) => {
+                    list.push_back(value.to_owned());
+                    Some(Ok(value))
+                }
+                Err(e) => Some(Err(e)),
+            },
+            _ => None,
+        }
+    }
+
+    /// Append to the front of a list
+    pub fn list_lpush(&mut self, key: String, value: String) -> Option<Result<String, ValueError>> {
+        match self._get_mut_or_none_if_expired(&key) {
+            Some(value_entry) => match value_entry.get_value_as_deque() {
+                Ok(list) => {
+                    list.push_front(value.to_owned());
+                    Some(Ok(value))
+                }
+                Err(e) => Some(Err(e)),
+            },
+            _ => None,
+        }
+    }
+
+    /// pop from the front of a list
+    pub fn list_lpop(&mut self, key: String) -> Option<Result<String, ValueError>> {
+        match self._get_mut_or_none_if_expired(&key) {
+            Some(value_entry) => match value_entry.get_value_as_deque() {
+                Ok(list) => {
+                    let opt_value = list.pop_front();
+                    if let Some(value) = opt_value {
+                        Some(Ok(value))
+                    } else {
+                        None
+                    }
+                }
+                Err(e) => Some(Err(e)),
+            },
+            _ => None,
+        }
+    }
+
+    /// pop from the back of a list
+    pub fn list_rpop(&mut self, key: String) -> Option<Result<String, ValueError>> {
+        match self._get_mut_or_none_if_expired(&key) {
+            Some(value_entry) => match value_entry.get_value_as_deque() {
+                Ok(list) => {
+                    let opt_value = list.pop_back();
+                    if let Some(value) = opt_value {
+                        Some(Ok(value))
+                    } else {
+                        None
+                    }
+                }
+                Err(e) => Some(Err(e)),
+            },
+            _ => None,
+        }
+    }
+
+    /// size of the list
+    pub fn list_size(&mut self, key: String) -> Option<Result<usize, ValueError>> {
+        match self._data.get_mut(&key) {
+            Some(value_entry) => match value_entry.get_value_as_deque() {
+                Ok(list) => Some(Ok(list.len())),
+                Err(e) => Some(Err(e)),
+            },
+            _ => None,
+        }
     }
 }
