@@ -179,7 +179,7 @@ impl KeyValueStore {
     }
 
     /// Gets a Value (converted to set<String> type) associated to the Key in the KeyValueStore
-    pub fn get_hset(&self, key: String) -> Option<Result<&HashSet<String>, ValueError>> {
+    pub fn get_hset(&self, key: String) -> Option<Result<HashSet<String>, ValueError>> {
         match self._get_or_none_if_expired(&key) {
             Some(value_entry) => Some(value_entry.get_value_as_hset()),
             _ => None,

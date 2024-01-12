@@ -150,9 +150,12 @@ impl ValueEntry {
         }
     }
 
-    pub fn get_value_as_hset(&self) -> Result<&HashSet<String>, ValueError> {
+    pub fn get_value_as_hset(&self) -> Result<HashSet<String>, ValueError> {
         match &self.value {
-            ValueType::Set(hash_set) => Ok(hash_set),
+            ValueType::Set(hash_set) => Ok(hash_set.to_owned()),
+            ValueType::String(string) => Ok(HashSet::from_iter(
+                string.chars().map(|item| item.to_string()),
+            )),
             _ => Err(ValueError::TypeConversionImpossible),
         }
     }
