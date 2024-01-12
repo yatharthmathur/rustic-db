@@ -203,9 +203,9 @@ fn test_incr_decr() {
     assert_eq!(store.incr("ABC".to_string(), None).unwrap().unwrap(), 69);
     assert_eq!(store.get_i64("ABC".to_string()).unwrap().unwrap(), 69);
 
-    assert_eq!(store.decr("ABC".to_string(), None).unwrap().unwrap(), 68);
+    assert_eq!(store.decr("ABC".to_string(), Some(8)).unwrap().unwrap(), 61);
     assert_eq!(
         store.get_string("ABC".to_string()).unwrap().unwrap(),
-        "68".to_string()
+        "61".to_string()
     );
 }

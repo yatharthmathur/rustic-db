@@ -106,8 +106,8 @@ impl KeyValueStore {
     fn _add(&mut self, key: String, value: i64) -> Option<Result<i64, CacheValueError>> {
         if let Some(value_entry) = self._data.get_mut(&key) {
             match value_entry.get_value_as_i64() {
-                Ok(integer) => {
-                    let updated_integer_value = integer + value;
+                Ok(old_value) => {
+                    let updated_integer_value = old_value + value;
                     value_entry.value = CacheValue::Integer64(updated_integer_value);
                     Some(Ok(updated_integer_value))
                 }
