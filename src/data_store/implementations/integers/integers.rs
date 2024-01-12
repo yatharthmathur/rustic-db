@@ -3,7 +3,7 @@ use crate::data_store::{
     types::ValueType,
 };
 
-use super::super::{store::KeyValueStore, value_entry::ValueEntry};
+use crate::data_store::{store::KeyValueStore, value_entry::ValueEntry};
 use std::time::{Duration, Instant};
 
 impl KeyValueStore {

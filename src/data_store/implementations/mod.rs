@@ -1,5 +1,5 @@
 mod bytes;
 mod hsets;
-mod integer;
+mod integers;
 mod lists;
 mod strings;
