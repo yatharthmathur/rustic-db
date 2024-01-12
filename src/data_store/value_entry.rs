@@ -20,7 +20,7 @@ pub enum CacheValueError {
 }
 
 #[derive(Clone)]
-enum CacheValue {
+pub enum CacheValue {
     Integer64(i64),
     Bytes(Vec<u8>),
     String(String),

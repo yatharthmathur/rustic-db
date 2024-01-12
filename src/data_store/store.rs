@@ -1,4 +1,4 @@
-use super::value_entry::{CacheValueError, TypeCastErrorDetails, ValueEntry};
+use super::value_entry::{CacheValue, CacheValueError, TypeCastErrorDetails, ValueEntry};
 use std::collections::HashMap;
 use std::num::TryFromIntError;
 use std::time::{Duration, Instant};
@@ -104,14 +104,12 @@ impl KeyValueStore {
     }
 
     fn _add(&mut self, key: String, value: i64) -> Option<Result<i64, CacheValueError>> {
-        if let Some(value_entry) = self._remove_and_none_if_expired(&key) {
+        if let Some(value_entry) = self._data.get_mut(&key) {
             match value_entry.get_value_as_i64() {
                 Ok(integer) => {
-                    self._insert(
-                        &key,
-                        &ValueEntry::from_i64(integer + value, value_entry.expiration),
-                    );
-                    self.get_i64(key)
+                    let updated_integer_value = integer + value;
+                    value_entry.value = CacheValue::Integer64(updated_integer_value);
+                    Some(Ok(updated_integer_value))
                 }
                 Err(e) => Some(Err(e)),
             }
