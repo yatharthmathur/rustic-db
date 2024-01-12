@@ -1,6 +1,12 @@
-use super::value_entry::{CacheError, ValueEntry};
+use super::value_entry::{CacheValueError, TypeCastErrorDetails, ValueEntry};
 use std::collections::HashMap;
+use std::num::TryFromIntError;
 use std::time::{Duration, Instant};
+
+#[derive(Debug)]
+pub enum CacheValidationError {
+    IntegerConversionError(TryFromIntError),
+}
 
 /// The main struct of the Key-Value store
 pub struct KeyValueStore {
@@ -84,15 +90,58 @@ impl KeyValueStore {
     }
 
     /// Inserts a Key-Value(in String type) pair in the KeyValueStore
-    /// Note: it will always be stored as Vec<u8> internally.
     pub fn set_string(&mut self, key: String, value: String, ttl: Option<u64>) {
         let expiration = Instant::now() + Duration::from_millis(ttl.unwrap_or(self.default_ttl));
         let value_entry = ValueEntry::from_string(value, expiration);
         self._insert(&key, &value_entry);
     }
 
+    /// Inserts a Key-Value(in i64 type) pair in the KeyValueStore
+    pub fn set_i64(&mut self, key: String, value: i64, ttl: Option<u64>) {
+        let expiration = Instant::now() + Duration::from_millis(ttl.unwrap_or(self.default_ttl));
+        let value_entry = ValueEntry::from_i64(value, expiration);
+        self._insert(&key, &value_entry);
+    }
+
+    fn _add(&mut self, key: String, value: i64) -> Option<Result<i64, CacheValueError>> {
+        if let Some(value_entry) = self._remove_and_none_if_expired(&key) {
+            match value_entry.get_value_as_i64() {
+                Ok(integer) => {
+                    self._insert(
+                        &key,
+                        &ValueEntry::from_i64(integer + value, value_entry.expiration),
+                    );
+                    self.get_i64(key)
+                }
+                Err(e) => Some(Err(e)),
+            }
+        } else {
+            None
+        }
+    }
+
+    /// decrement an existing value associated to key by a certain number.
+    pub fn decr(&mut self, key: String, by: Option<u64>) -> Option<Result<i64, CacheValueError>> {
+        match i64::try_from(by.unwrap_or(1)) {
+            Ok(value) => self._add(key, -value),
+            Err(e) => Some(Err(CacheValueError::TypeConversionError(
+                TypeCastErrorDetails::TryFromIntError(e),
+            ))),
+        }
+    }
+
+    /// increment an existing value associated to a key by a certain number.
+    pub fn incr(&mut self, key: String, by: Option<u64>) -> Option<Result<i64, CacheValueError>> {
+        match i64::try_from(by.unwrap_or(1)) {
+            Ok(value) => self._add(key, value),
+            Err(e) => Some(Err(CacheValueError::TypeConversionError(
+                TypeCastErrorDetails::TryFromIntError(e),
+            ))),
+        }
+    }
+
     /// Gets a Value (in Vec<u8> type) associated to the Key in the KeyValueStore
-    pub fn get_bytes(&mut self, key: String) -> Option<Result<Vec<u8>, CacheError>> {
+    pub fn get_bytes(&mut self, key: String) -> Option<Result<Vec<u8>, CacheValueError>> {
         match self._get_or_none_if_expired(&key) {
             Some(value_entry) => Some(value_entry.get_value_as_bytes()),
             _ => None,
@@ -100,9 +149,17 @@ impl KeyValueStore {
     }
 
     /// Gets a Value (converted to String type) associated to the Key in the KeyValueStore
-    pub fn get_string(&mut self, key: String) -> Option<Result<String, CacheError>> {
+    pub fn get_string(&mut self, key: String) -> Option<Result<String, CacheValueError>> {
         match self._get_or_none_if_expired(&key) {
             Some(value_entry) => Some(value_entry.get_value_as_string()),
+            _ => None,
+        }
+    }
+
+    /// Gets a Value (converted to String type) associated to the Key in the KeyValueStore
+    pub fn get_i64(&mut self, key: String) -> Option<Result<i64, CacheValueError>> {
+        match self._get_or_none_if_expired(&key) {
+            Some(value_entry) => Some(value_entry.get_value_as_i64()),
             _ => None,
         }
     }
@@ -114,7 +171,7 @@ impl KeyValueStore {
 
     /// Removes the Key-Value pair for the given Key in the KeyValueStore
     /// and returns the Value (in Vec<u8> type)
-    pub fn pop_bytes(&mut self, key: String) -> Option<Result<Vec<u8>, CacheError>> {
+    pub fn pop_bytes(&mut self, key: String) -> Option<Result<Vec<u8>, CacheValueError>> {
         match self._remove_and_none_if_expired(&key) {
             Some(value_entry) => Some(value_entry.get_value_as_bytes()),
             _ => None,
@@ -123,9 +180,18 @@ impl KeyValueStore {
 
     /// Removes the Key-Value pair for the given Key in the KeyValueStore
     /// and returns the Value (converted to String type)
-    pub fn pop_string(&mut self, key: String) -> Option<Result<String, CacheError>> {
+    pub fn pop_string(&mut self, key: String) -> Option<Result<String, CacheValueError>> {
         match self._remove_and_none_if_expired(&key) {
             Some(value_entry) => Some(value_entry.get_value_as_string()),
+            _ => None,
+        }
+    }
+
+    /// Removes the Key-Value pair for the given Key in the KeyValueStore
+    /// and returns the Value (converted to i64 type)
+    pub fn pop_i64(&mut self, key: String) -> Option<Result<i64, CacheValueError>> {
+        match self._remove_and_none_if_expired(&key) {
+            Some(value_entry) => Some(value_entry.get_value_as_i64()),
             _ => None,
         }
     }

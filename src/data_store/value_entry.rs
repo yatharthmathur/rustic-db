@@ -1,17 +1,27 @@
 use std::{
     collections::{HashMap, HashSet},
+    num::{ParseIntError, TryFromIntError},
     string::FromUtf8Error,
     time::Instant,
 };
 
 #[derive(Debug)]
-pub enum CacheError {
-    InvalidType,
-    InvalidTypeCast(FromUtf8Error),
+pub enum TypeCastErrorDetails {
+    ParseIntError(ParseIntError),
+    FromUtf8Error(FromUtf8Error),
+    TryFromIntError(TryFromIntError),
+    // Add other type cast error variants as needed
+}
+
+#[derive(Debug)]
+pub enum CacheValueError {
+    TypeConversionNotPossible,
+    TypeConversionError(TypeCastErrorDetails),
 }
 
 #[derive(Clone)]
 enum CacheValue {
+    Integer64(i64),
     Bytes(Vec<u8>),
     String(String),
     List(Vec<String>),
@@ -31,6 +41,13 @@ pub struct ValueEntry {
 }
 
 impl ValueEntry {
+    pub fn from_i64(value: i64, expiration: Instant) -> Self {
+        ValueEntry {
+            value: CacheValue::Integer64(value),
+            expiration,
+        }
+    }
+
     pub fn from_bytes(value: Vec<u8>, expiration: Instant) -> Self {
         ValueEntry {
             value: CacheValue::Bytes(value),
@@ -66,22 +83,39 @@ impl ValueEntry {
         }
     }
 
-    pub fn get_value_as_bytes(&self) -> Result<Vec<u8>, CacheError> {
+    pub fn get_value_as_i64(&self) -> Result<i64, CacheValueError> {
         match &self.value {
-            CacheValue::Bytes(bytes) => Ok(bytes.to_owned()),
-            CacheValue::String(string) => Ok(string.to_owned().into_bytes()),
-            _ => Err(CacheError::InvalidType),
+            CacheValue::Integer64(integer) => Ok(integer.to_owned()),
+            CacheValue::String(string) => match string.parse::<i64>() {
+                Ok(integer_value) => Ok(integer_value),
+                Err(e) => Err(CacheValueError::TypeConversionError(
+                    TypeCastErrorDetails::ParseIntError(e),
+                )),
+            },
+            _ => Err(CacheValueError::TypeConversionNotPossible),
         }
     }
 
-    pub fn get_value_as_string(&self) -> Result<String, CacheError> {
+    pub fn get_value_as_bytes(&self) -> Result<Vec<u8>, CacheValueError> {
+        match &self.value {
+            CacheValue::Bytes(bytes) => Ok(bytes.to_owned()),
+            CacheValue::String(string) => Ok(string.to_owned().into_bytes()),
+            CacheValue::Integer64(integer) => Ok(integer.to_le_bytes().to_vec()),
+            _ => Err(CacheValueError::TypeConversionNotPossible),
+        }
+    }
+
+    pub fn get_value_as_string(&self) -> Result<String, CacheValueError> {
         match &self.value {
             CacheValue::String(value_string) => Ok(value_string.to_owned()),
             CacheValue::Bytes(value_bytes) => match String::from_utf8(value_bytes.to_owned()) {
-                Err(e) => Err(CacheError::InvalidTypeCast(e)),
+                Err(e) => Err(CacheValueError::TypeConversionError(
+                    TypeCastErrorDetails::FromUtf8Error(e),
+                )),
                 Ok(string_value) => Ok(string_value),
             },
-            _ => Err(CacheError::InvalidType),
+            CacheValue::Integer64(value_integer) => Ok(value_integer.to_string()),
+            _ => Err(CacheValueError::TypeConversionNotPossible),
         }
     }
 
