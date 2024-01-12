@@ -6,8 +6,34 @@ use std::time::Duration;
 fn test_contains() {
     let mut store = KeyValueStore::new(0);
     store.set_with_string_value("ABC".to_string(), "HELLO".to_string(), Some(5000));
-    assert!(store.contains("ABC".to_string()));
-    assert_ne!(store.contains("ABC".to_string()), false);
+    assert!(store.contains_key("ABC".to_string()));
+    assert_ne!(store.contains_key("ABC".to_string()), false);
+}
+
+#[test]
+fn test_clear_all_expired_keys() {
+    let mut store = KeyValueStore::new(5000);
+    store.set_with_string_value("ABC".to_string(), "HELLO".to_string(), Some(250));
+    store.set_with_string_value("XYZ".to_string(), "HELLO".to_string(), Some(250));
+    store.set_with_string_value("DEF".to_string(), "HELLO".to_string(), Some(250));
+
+    store.clear_all_expired_keys();
+
+    assert!(store.contains_key("ABC".to_string()));
+
+    std::thread::sleep(Duration::from_millis(250));
+    assert!(store.contains_key("ABC".to_string()));
+    assert!(store.contains_key("DEF".to_string()));
+    assert!(store.contains_key("XYZ".to_string()));
+
+    assert!(store.is_expired("ABC".to_string()).unwrap());
+
+    store.clear_all_expired_keys();
+    assert_eq!(store.contains_key("ABC".to_string()), false);
+    assert_eq!(store.contains_key("DEF".to_string()), false);
+    assert_eq!(store.contains_key("XYZ".to_string()), false);
+
+    assert_eq!(store.is_expired("ABC".to_string()), None);
 }
 
 #[test]
@@ -15,7 +41,7 @@ fn test_set_get() {
     let mut store = KeyValueStore::new(0);
     store.set_with_string_value("ABC".to_string(), "HELLO".to_string(), Some(5000));
     if let Some(val) = store.get_as_string("ABC".to_string()) {
-        assert_eq!(val, "HELLO".to_string());
+        assert_eq!(val, Ok("HELLO".to_string()));
     }
 }
 
@@ -24,7 +50,7 @@ fn test_set_get_vec_u8() {
     let mut store = KeyValueStore::new(0);
     store.set("ABC".to_string(), "HELLO".as_bytes().to_vec(), Some(5000));
     if let Some(val) = store.get_as_string("ABC".to_string()) {
-        assert_eq!(val, "HELLO".to_string());
+        assert_eq!(val, Ok("HELLO".to_string()));
     }
 
     if let Some(vec_val) = store.get("ABC".to_string()) {
@@ -39,7 +65,7 @@ fn test_pop_vec_u8() {
     let mut store = KeyValueStore::new(0);
     store.set("ABC".to_string(), "HELLO".as_bytes().to_vec(), Some(5000));
     if let Some(val) = store.get_as_string("ABC".to_string()) {
-        assert_eq!(val, "HELLO".to_string());
+        assert_eq!(val, Ok("HELLO".to_string()));
     }
 
     if let Some(vec_val) = store.pop("ABC".to_string()) {
@@ -77,15 +103,37 @@ fn test_get_set_binary_data() {
 }
 
 #[test]
+fn test_get_set_binary_data_conversion_to_string_fails() {
+    #[derive(Serialize, Deserialize)]
+    struct LocalStruct {
+        test1: f64,
+        test2: String,
+    }
+
+    let local_struct_instance: LocalStruct = LocalStruct {
+        test1: 3.1415,
+        test2: "Hey there".to_string(),
+    };
+    let mut store = KeyValueStore::new(0);
+    let bin_code = bincode::serialize(&local_struct_instance).unwrap();
+    store.set("ABC".to_string(), bin_code, Some(5000));
+
+    assert_eq!(
+        store.get_as_string("ABC".to_string()).unwrap().is_ok(),
+        false
+    );
+}
+
+#[test]
 fn test_pop_key() {
     let mut store = KeyValueStore::new(0);
     store.set_with_string_value("ABC".to_string(), "HELLO".to_string(), Some(5000));
     if let Some(val) = store.get_as_string("ABC".to_string()) {
-        assert_eq!(val, "HELLO".to_string());
+        assert_eq!(val, Ok("HELLO".to_string()));
     };
 
     if let Some(val) = store.pop_as_string("ABC".to_string()) {
-        assert_eq!(val, "HELLO".to_string());
+        assert_eq!(val, Ok("HELLO".to_string()));
     };
 
     match store.get_as_string("ABC".to_string()) {
@@ -100,7 +148,7 @@ fn test_remove_key() {
     store.set_with_string_value("ABC".to_string(), "HELLO".to_string(), Some(5000));
     store.remove("XYZ".to_string());
     if let Some(val) = store.get_as_string("ABC".to_string()) {
-        assert_eq!(val, "HELLO".to_string());
+        assert_eq!(val, Ok("HELLO".to_string()));
     };
 
     store.remove("ABC".to_string());
