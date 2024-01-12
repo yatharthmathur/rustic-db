@@ -18,6 +18,11 @@ fn test_set_get_deque() {
         store.get_list("DEF".to_string()).unwrap().unwrap(),
         vec!["X".to_string(), "Y".to_string(), "Z".to_string()]
     );
+
+    assert_eq!(
+        store.pop_list("DEF".to_string()).unwrap().unwrap(),
+        vec!["X".to_string(), "Y".to_string(), "Z".to_string()]
+    );
 }
 
 #[test]

@@ -29,6 +29,11 @@ fn test_set_get_hset() {
         store.get_hset("DEF".to_string()).unwrap().unwrap(),
         HashSet::from_iter(vec!["X".to_string(), "Y".to_string(), "Z".to_string()])
     );
+
+    assert_eq!(
+        store.pop_hset("DEF".to_string()).unwrap().unwrap(),
+        HashSet::from_iter(vec!["X".to_string(), "Y".to_string(), "Z".to_string()])
+    );
 }
 
 #[test]

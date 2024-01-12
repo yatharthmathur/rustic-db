@@ -15,6 +15,8 @@ fn test_get_set_i64() {
         store.get_bytes("ABC".to_string()).unwrap().unwrap(),
         i64::to_le_bytes(999)
     );
+
+    assert_eq!(store.pop_i64("ABC".to_string()).unwrap().unwrap(), 999);
 }
 
 #[test]

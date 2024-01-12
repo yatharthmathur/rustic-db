@@ -32,8 +32,11 @@ impl KeyValueStore {
 
     /// Removes the Key-Value pair for the given Key in the KeyValueStore
     /// and returns the Value (converted to Vec<String> type)
-    pub fn pop_hset(&mut self, key: String) -> Option<Result<Vec<String>, ValueError>> {
-        self.pop_list(key)
+    pub fn pop_hset(&mut self, key: String) -> Option<Result<HashSet<String>, ValueError>> {
+        match self._remove_and_none_if_expired(&key) {
+            Some(value_entry) => Some(value_entry.get_value_as_hset()),
+            _ => None,
+        }
     }
 
     /// Adds an item to the set and returns the cardinality of the set.
