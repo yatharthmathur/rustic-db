@@ -77,14 +77,14 @@ impl KeyValueStore {
     }
 
     /// Check whether the key exists in the store.
-    /// NOTE: this returns true, even if the key is expired.
+    /// NOTE: this may return true, even if the key is expired.
     pub fn contains_key(&self, key: String) -> bool {
         self._data.contains_key(&key)
     }
 
     /// Check whether a key is expired or not.
     pub fn is_expired(&self, key: String) -> Option<bool> {
-        if let Some(value_entry) = self._get_or_none_if_expired(&key) {
+        if let Some(value_entry) = self._data.get(&key) {
             Some(value_entry.is_expired_entry(None))
         } else {
             None
@@ -404,6 +404,7 @@ impl KeyValueStore {
         }
     }
 
+    /// Get the intersection between two sets in the data store
     pub fn hset_intersection(
         &self,
         key1: String,
@@ -433,6 +434,7 @@ impl KeyValueStore {
         )))
     }
 
+    /// Get the intersection between two sets in the data store
     pub fn hset_union(
         &self,
         key1: String,
@@ -462,6 +464,7 @@ impl KeyValueStore {
         )))
     }
 
+    /// Get the difference between two sets in the data store
     pub fn hset_difference(
         &self,
         key1: String,
