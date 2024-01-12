@@ -48,13 +48,6 @@ impl ValueEntry {
         }
     }
 
-    pub fn from_deque(value: VecDeque<String>, expiration: Instant) -> Self {
-        ValueEntry {
-            value: ValueType::Deque(value),
-            expiration,
-        }
-    }
-
     pub fn from_hset(value: HashSet<String>, expiration: Instant) -> Self {
         ValueEntry {
             value: ValueType::Set(value),

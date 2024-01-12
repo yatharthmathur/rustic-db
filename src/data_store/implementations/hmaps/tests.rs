@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use crate::data_store::store::KeyValueStore;
 
 #[test]
@@ -70,11 +68,11 @@ fn test_hmap_keys_values_items() {
     );
     assert_eq!(store.hmap_size("ABC".to_string()).unwrap().unwrap(), 3);
 
-    let mut keys = store.hmap_keys("ABC".to_string()).unwrap().unwrap();
+    let keys = store.hmap_keys("ABC".to_string()).unwrap().unwrap();
     let mut sorted_keys = keys.to_owned();
     sorted_keys.sort();
 
-    let mut values = store.hmap_values("ABC".to_string()).unwrap().unwrap();
+    let values = store.hmap_values("ABC".to_string()).unwrap().unwrap();
     let values_in_order_of_keys: Vec<String> = keys
         .iter()
         .map(|item| {
