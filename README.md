@@ -8,6 +8,15 @@ A fast and lightweight KeyValue store written in Rust.
     - I am using (rustc 1.75.0)
 - Install pre-commit (https://pre-commit.com/)
     - Then run `pre-commit install` in the project directory
+- Development setup:
+    - Recommended Editor: VSCode
+    - VSCode Extensions:
+        - Plugin bundle: https://github.com/1YiB/vsc-bundle
+        - rust-analyzer
+        - crates
 
 ## How to run
 ```cargo run```
+
+## How to run test cases
+```cargo test```
