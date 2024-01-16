@@ -20,3 +20,6 @@ A fast and lightweight KeyValue store written in Rust.
 
 ## How to run test cases
 ```cargo test```
+
+# Contributing to rustic-db
+Please checkout our contribution doc [here](CONTRIBUTING.md).
