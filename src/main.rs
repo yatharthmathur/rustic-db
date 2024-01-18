@@ -1,7 +1,12 @@
-mod data_store;
-use data_store::store::KeyValueStore;
+mod managers;
+mod stores;
+use managers::manager::RusticManager;
+use stores::store::KeyValueStore;
 
 fn main() {
     println!("Hello, rustics!");
-    let _store = KeyValueStore::new(0);
+    let mut manager = RusticManager::new();
+    manager.create_store("new_store_0".to_owned(), Some(5000));
+    let store = manager.get_store_mut("new_store_0".to_owned()).unwrap();
+    store.set_i64("key".to_owned(), 500, None);
 }

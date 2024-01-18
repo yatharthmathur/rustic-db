@@ -1,2 +1,0 @@
-mod strings;
-mod tests;
