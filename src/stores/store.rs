@@ -1,25 +1,42 @@
 use std::collections::HashMap;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use super::value_entry::ValueEntry;
 
 /// The main struct of the Key-Value store
 pub struct KeyValueStore {
+    /// Identifier of the store
+    _name: String,
+
     /// The data is internally stored as a HashMap mapping String keys to a KeyValueEntry struct
     pub(super) _data: HashMap<String, ValueEntry>,
 
     /// The default time to live for each key is set here (globally).
-    pub(super) default_ttl: u64,
+    pub(super) default_ttl: Option<u64>,
 }
 
 impl KeyValueStore {
     /// Returns a new KeyValue store
     /// Arguments:
-    /// * `default_ttl` - duration in milliseconds for  which every key by default lives in the cache.
-    pub fn new(default_ttl_millis: u64) -> Self {
+    /// * `default_ttl` - duration in milliseconds for  which every key by default lives in the store.
+    /// if this default_ttl is None, then the data can live forever in the store (if the key is set with None ttl as well).
+    pub fn new(name: String, default_ttl: Option<u64>) -> Self {
         KeyValueStore {
+            _name: name,
             _data: HashMap::new(),
-            default_ttl: default_ttl_millis,
+            default_ttl: default_ttl,
+        }
+    }
+
+    pub(super) fn _get_expiration_instant(&self, ttl: Option<u64>) -> Option<Instant> {
+        if ttl.is_none() && self.default_ttl.is_none() {
+            // If the ttl is None and the store allows for infinite ttl
+            // this key will never expire
+            None
+        } else if ttl.is_none() {
+            Some(Instant::now() + Duration::from_millis(self.default_ttl.unwrap()))
+        } else {
+            Some(Instant::now() + Duration::from_millis(ttl.unwrap()))
         }
     }
 

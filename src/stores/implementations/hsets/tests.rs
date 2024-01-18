@@ -1,10 +1,10 @@
 use std::collections::HashSet;
 
-use crate::data_store::store::KeyValueStore;
+use crate::stores::store::KeyValueStore;
 
 #[test]
 fn test_set_get_hset() {
-    let mut store = KeyValueStore::new(5000);
+    let mut store = KeyValueStore::new("new_store".to_owned(), None);
     store.set_hset(
         "ABC".to_string(),
         vec![
@@ -38,7 +38,7 @@ fn test_set_get_hset() {
 
 #[test]
 fn test_add_remove_hset() {
-    let mut store = KeyValueStore::new(5000);
+    let mut store = KeyValueStore::new("new_store".to_owned(), None);
     store.set_hset(
         "ABC".to_string(),
         vec![
@@ -95,7 +95,7 @@ fn test_add_remove_hset() {
 
 #[test]
 fn test_hset_union_intersection_difference() {
-    let mut store = KeyValueStore::new(5000);
+    let mut store = KeyValueStore::new("new_store".to_owned(), None);
     store.set_hset(
         "ABC".to_string(),
         vec![

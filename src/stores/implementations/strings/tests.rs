@@ -1,8 +1,8 @@
-use crate::data_store::store::KeyValueStore;
+use crate::stores::store::KeyValueStore;
 
 #[test]
 fn test_set_get_string() {
-    let mut store = KeyValueStore::new(0);
+    let mut store = KeyValueStore::new("new_store".to_owned(), None);
     store.set_string("ABC".to_string(), "HELLO".to_string(), Some(5000));
     assert_eq!(
         store.get_string("ABC".to_string()).unwrap().unwrap(),
@@ -28,7 +28,7 @@ fn test_set_get_string() {
 
 #[test]
 fn test_pop_string() {
-    let mut store = KeyValueStore::new(0);
+    let mut store = KeyValueStore::new("new_store".to_owned(), None);
     store.set_string("ABC".to_string(), "HELLO".to_string(), Some(5000));
     assert_eq!(
         store.pop_string("ABC".to_string()).unwrap().unwrap(),

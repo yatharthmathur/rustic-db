@@ -1,8 +1,8 @@
-use crate::data_store::store::KeyValueStore;
+use crate::stores::store::KeyValueStore;
 
 #[test]
 fn test_set_get_deque() {
-    let mut store = KeyValueStore::new(5000);
+    let mut store = KeyValueStore::new("new_store".to_owned(), None);
     store.set_list(
         "ABC".to_string(),
         vec!["X".to_string(), "Y".to_string(), "Z".to_string()],
@@ -27,7 +27,7 @@ fn test_set_get_deque() {
 
 #[test]
 fn test_deque_methods() {
-    let mut store = KeyValueStore::new(5000);
+    let mut store = KeyValueStore::new("new_store".to_owned(), None);
     store.set_list("ABC".to_string(), vec!["X".to_string()], None);
     assert_eq!(
         store.get_list("ABC".to_string()).unwrap().unwrap(),

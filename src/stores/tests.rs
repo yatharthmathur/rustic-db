@@ -3,7 +3,7 @@ use std::time::Duration;
 
 #[test]
 fn test_contains() {
-    let mut store = KeyValueStore::new(0);
+    let mut store = KeyValueStore::new("new_store".to_owned(), None);
     store.set_string("ABC".to_string(), "HELLO".to_string(), Some(5000));
     assert!(store.contains_key("ABC".to_string()));
     assert_ne!(store.contains_key("ABC".to_string()), false);
@@ -11,7 +11,7 @@ fn test_contains() {
 
 #[test]
 fn test_clear_all_expired_keys() {
-    let mut store = KeyValueStore::new(5000);
+    let mut store = KeyValueStore::new("new_store".to_owned(), None);
     store.set_string("ABC".to_string(), "HELLO".to_string(), Some(250));
     store.set_string("XYZ".to_string(), "HELLO".to_string(), Some(250));
     store.set_string("DEF".to_string(), "HELLO".to_string(), Some(250));
@@ -37,7 +37,7 @@ fn test_clear_all_expired_keys() {
 
 #[test]
 fn test_remove_key() {
-    let mut store = KeyValueStore::new(0);
+    let mut store = KeyValueStore::new("new_store".to_owned(), None);
     store.set_string("ABC".to_string(), "HELLO".to_string(), Some(5000));
     store.remove("ABC".to_string());
     assert!(store.get_string("ABC".to_string()).is_none());
@@ -46,10 +46,13 @@ fn test_remove_key() {
 
 #[test]
 fn test_key_expiry() {
-    let mut store = KeyValueStore::new(500);
+    let mut store = KeyValueStore::new("new_store".to_owned(), None);
     store.set_string("ABC".to_string(), "HELLO".to_string(), Some(500));
     store.set_string("XYZ".to_string(), "HELLO".to_string(), Some(500));
 
+    // Infinitely stored value.
+    store.set_string("Inf".to_string(), "HELLO".to_string(), None);
+
     std::thread::sleep(Duration::from_millis(250));
     match store.get_string("ABC".to_string()) {
         Some(_) => assert!(true),
@@ -68,12 +71,16 @@ fn test_key_expiry() {
     match store.get_string("XYZ".to_string()) {
         None => assert!(true),
         Some(_) => assert!(false),
+    };
+    match store.get_string("Inf".to_string()) {
+        None => assert!(false),
+        Some(_) => assert!(true),
     };
 }
 
 #[test]
 fn test_clear_store() {
-    let mut store = KeyValueStore::new(5000);
+    let mut store = KeyValueStore::new("new_store".to_owned(), None);
     store.set_string("ABC".to_string(), "HELLO".to_string(), None);
     store.set_string("XYZ".to_string(), "HELLO".to_string(), None);
     store.set_string("DEF".to_string(), "HELLO".to_string(), None);

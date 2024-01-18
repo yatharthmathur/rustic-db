@@ -1,13 +1,10 @@
-use crate::data_store::{errors::ValueError, store::KeyValueStore, value_entry::ValueEntry};
-use std::{
-    collections::HashMap,
-    time::{Duration, Instant},
-};
+use crate::stores::{errors::ValueError, store::KeyValueStore, value_entry::ValueEntry};
+use std::collections::HashMap;
 
 impl KeyValueStore {
     /// Inserts a Key-Value(in HashMap<(String, String)> type) pair in the KeyValueStore
     pub fn set_hmap(&mut self, key: String, value: Vec<(String, String)>, ttl: Option<u64>) {
-        let expiration = Instant::now() + Duration::from_millis(ttl.unwrap_or(self.default_ttl));
+        let expiration = self._get_expiration_instant(ttl);
         let value_entry = ValueEntry::from_hashmap(HashMap::from_iter(value), expiration);
         self._insert(&key, &value_entry);
     }

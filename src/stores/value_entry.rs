@@ -15,47 +15,47 @@ pub struct ValueEntry {
     pub value: ValueType,
 
     /// Expiration datetime of the given key is stored here.
-    pub expiration: Instant,
+    pub expiration: Option<Instant>,
     // todo: Add more fields depending on type maybe.
 }
 
 impl ValueEntry {
-    pub fn from_i64(value: i64, expiration: Instant) -> Self {
+    pub fn from_i64(value: i64, expiration: Option<Instant>) -> Self {
         ValueEntry {
             value: ValueType::Integer64(value),
             expiration,
         }
     }
 
-    pub fn from_bytes(value: Vec<u8>, expiration: Instant) -> Self {
+    pub fn from_bytes(value: Vec<u8>, expiration: Option<Instant>) -> Self {
         ValueEntry {
             value: ValueType::Bytes(value),
             expiration,
         }
     }
 
-    pub fn from_string(value: String, expiration: Instant) -> Self {
+    pub fn from_string(value: String, expiration: Option<Instant>) -> Self {
         ValueEntry {
             value: ValueType::String(value),
             expiration,
         }
     }
 
-    pub fn from_list(value: Vec<String>, expiration: Instant) -> Self {
+    pub fn from_list(value: Vec<String>, expiration: Option<Instant>) -> Self {
         ValueEntry {
             value: ValueType::Deque(VecDeque::from(value)),
             expiration,
         }
     }
 
-    pub fn from_hset(value: HashSet<String>, expiration: Instant) -> Self {
+    pub fn from_hset(value: HashSet<String>, expiration: Option<Instant>) -> Self {
         ValueEntry {
             value: ValueType::Set(value),
             expiration,
         }
     }
 
-    pub fn from_hashmap(value: HashMap<String, String>, expiration: Instant) -> Self {
+    pub fn from_hashmap(value: HashMap<String, String>, expiration: Option<Instant>) -> Self {
         ValueEntry {
             value: ValueType::HashMap(value),
             expiration,
@@ -196,7 +196,11 @@ impl ValueEntry {
 
     /// Check if this entry is expired.
     pub fn is_expired_entry(&self, option_now: Option<Instant>) -> bool {
+        if self.expiration.is_none() {
+            // If the ttl is not set for the key.
+            return false;
+        }
         let now = option_now.unwrap_or(Instant::now());
-        now >= self.expiration
+        now >= self.expiration.unwrap()
     }
 }

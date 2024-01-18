@@ -1,10 +1,9 @@
-use crate::data_store::{errors::ValueError, store::KeyValueStore, value_entry::ValueEntry};
-use std::time::{Duration, Instant};
+use crate::stores::{errors::ValueError, store::KeyValueStore, value_entry::ValueEntry};
 
 impl KeyValueStore {
     /// Inserts a Key-Value(in Vec<u8> type) pair in the KeyValueStore
     pub fn set_bytes(&mut self, key: String, value: Vec<u8>, ttl: Option<u64>) {
-        let expiration = Instant::now() + Duration::from_millis(ttl.unwrap_or(self.default_ttl));
+        let expiration = self._get_expiration_instant(ttl);
         let value_entry = ValueEntry::from_bytes(value, expiration);
         self._insert(&key, &value_entry);
     }

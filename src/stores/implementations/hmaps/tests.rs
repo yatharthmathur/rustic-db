@@ -1,8 +1,8 @@
-use crate::data_store::store::KeyValueStore;
+use crate::stores::store::KeyValueStore;
 
 #[test]
 fn test_insert_get_hmap() {
-    let mut store = KeyValueStore::new(5000);
+    let mut store = KeyValueStore::new("new_store".to_owned(), None);
     store.set_hmap("ABC".to_string(), vec![], None);
 
     assert_eq!(
@@ -38,7 +38,7 @@ fn test_insert_get_hmap() {
 
 #[test]
 fn test_hmap_keys_values_items() {
-    let mut store = KeyValueStore::new(5000);
+    let mut store = KeyValueStore::new("new_store".to_owned(), None);
     store.set_hmap("ABC".to_string(), vec![], None);
 
     assert_eq!(
@@ -100,7 +100,7 @@ fn test_hmap_keys_values_items() {
 
 #[test]
 fn test_remove_hmap() {
-    let mut store = KeyValueStore::new(5000);
+    let mut store = KeyValueStore::new("new_store".to_owned(), None);
     store.set_hmap("ABC".to_string(), vec![], None);
 
     assert_eq!(

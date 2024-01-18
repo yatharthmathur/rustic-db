@@ -1,10 +1,9 @@
-use crate::data_store::{errors::ValueError, store::KeyValueStore, value_entry::ValueEntry};
-use std::time::{Duration, Instant};
+use crate::stores::{errors::ValueError, store::KeyValueStore, value_entry::ValueEntry};
 
 impl KeyValueStore {
     /// Inserts a Key-Value(in String type) pair in the KeyValueStore
     pub fn set_string(&mut self, key: String, value: String, ttl: Option<u64>) {
-        let expiration = Instant::now() + Duration::from_millis(ttl.unwrap_or(self.default_ttl));
+        let expiration = self._get_expiration_instant(ttl);
         let value_entry = ValueEntry::from_string(value, expiration);
         self._insert(&key, &value_entry);
     }

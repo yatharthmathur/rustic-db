@@ -1,15 +1,14 @@
-use crate::data_store::{
+use crate::stores::{
     errors::{TypeConversionError, ValueError},
     store::KeyValueStore,
     types::ValueType,
     value_entry::ValueEntry,
 };
-use std::time::{Duration, Instant};
 
 impl KeyValueStore {
     /// Inserts a Key-Value(in i64 type) pair in the KeyValueStore
     pub fn set_i64(&mut self, key: String, value: i64, ttl: Option<u64>) {
-        let expiration = Instant::now() + Duration::from_millis(ttl.unwrap_or(self.default_ttl));
+        let expiration = self._get_expiration_instant(ttl);
         let value_entry = ValueEntry::from_i64(value, expiration);
         self._insert(&key, &value_entry);
     }

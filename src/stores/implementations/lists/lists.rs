@@ -1,13 +1,10 @@
-use crate::data_store::{errors::ValueError, store::KeyValueStore, value_entry::ValueEntry};
-use std::{
-    collections::VecDeque,
-    time::{Duration, Instant},
-};
+use crate::stores::{errors::ValueError, store::KeyValueStore, value_entry::ValueEntry};
+use std::collections::VecDeque;
 
 impl KeyValueStore {
     /// Inserts a Key-Value(in Vec<String> type) pair in the KeyValueStore
     pub fn set_list(&mut self, key: String, value: Vec<String>, ttl: Option<u64>) {
-        let expiration = Instant::now() + Duration::from_millis(ttl.unwrap_or(self.default_ttl));
+        let expiration = self._get_expiration_instant(ttl);
         let value_entry = ValueEntry::from_list(value, expiration);
         self._insert(&key, &value_entry);
     }
