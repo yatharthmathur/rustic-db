@@ -20,9 +20,9 @@ impl KeyValueStore {
     /// Arguments:
     /// * `default_ttl` - duration in milliseconds for  which every key by default lives in the store.
     /// if this default_ttl is None, then the data can live forever in the store (if the key is set with None ttl as well).
-    pub fn new(name: String, default_ttl: Option<u64>) -> Self {
+    pub fn new(name: &str, default_ttl: Option<u64>) -> Self {
         KeyValueStore {
-            _name: name,
+            _name: name.to_owned(),
             _data: HashMap::new(),
             default_ttl: default_ttl,
         }
@@ -44,11 +44,11 @@ impl KeyValueStore {
         }
     }
 
-    pub(super) fn _insert(&mut self, key: &String, value_entry: &ValueEntry) {
+    pub(super) fn _insert(&mut self, key: &str, value_entry: &ValueEntry) {
         self._data.insert(key.to_owned(), value_entry.to_owned());
     }
 
-    pub(super) fn _remove_and_none_if_expired(&mut self, key: &String) -> Option<ValueEntry> {
+    pub(super) fn _remove_and_none_if_expired(&mut self, key: &str) -> Option<ValueEntry> {
         if let Some(value_entry) = self._data.remove(key) {
             if value_entry.is_expired_entry(None) {
                 None
@@ -60,7 +60,7 @@ impl KeyValueStore {
         }
     }
 
-    pub(super) fn _get_or_none_if_expired(&self, key: &String) -> Option<&ValueEntry> {
+    pub(super) fn _get_or_none_if_expired(&self, key: &str) -> Option<&ValueEntry> {
         if let Some(value_entry) = self._data.get(key) {
             if value_entry.is_expired_entry(None) {
                 None
@@ -72,7 +72,7 @@ impl KeyValueStore {
         }
     }
 
-    pub(super) fn _get_mut_or_none_if_expired(&mut self, key: &String) -> Option<&mut ValueEntry> {
+    pub(super) fn _get_mut_or_none_if_expired(&mut self, key: &str) -> Option<&mut ValueEntry> {
         if let Some(value_entry) = self._data.get_mut(key) {
             if value_entry.is_expired_entry(None) {
                 None
@@ -94,19 +94,19 @@ impl KeyValueStore {
             .collect();
 
         for key in expired_keys {
-            self.remove(key);
+            self.remove(key.as_str());
         }
     }
 
     /// Check whether the key exists in the store.
     /// NOTE: this may return true, even if the key is expired.
-    pub fn contains_key(&self, key: String) -> bool {
-        self._data.contains_key(&key)
+    pub fn contains_key(&self, key: &str) -> bool {
+        self._data.contains_key(&key.to_string())
     }
 
     /// Check whether a key is expired or not.
-    pub fn is_expired(&self, key: String) -> Option<bool> {
-        if let Some(value_entry) = self._data.get(&key) {
+    pub fn is_expired(&self, key: &str) -> Option<bool> {
+        if let Some(value_entry) = self._data.get(key) {
             Some(value_entry.is_expired_entry(None))
         } else {
             None
@@ -114,8 +114,8 @@ impl KeyValueStore {
     }
 
     /// Removes the Key-Value pair for the given Key in the KeyValueStore
-    pub fn remove(&mut self, key: String) {
-        self._remove_and_none_if_expired(&key);
+    pub fn remove(&mut self, key: &str) {
+        self._remove_and_none_if_expired(key);
     }
 
     /// Clear all Key-Value pairs from the KeyValueStore
