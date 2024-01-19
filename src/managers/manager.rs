@@ -1,6 +1,6 @@
-use std::collections::HashMap;
-
 use crate::stores::store::KeyValueStore;
+use log::info;
+use std::collections::HashMap;
 
 pub struct RusticManager {
     _stores_map: HashMap<String, KeyValueStore>,
@@ -46,5 +46,17 @@ impl RusticManager {
     /// List names of all the stores
     pub fn list_store_names(&self) -> Vec<&String> {
         self._stores_map.keys().collect()
+    }
+
+    /// Clear expired keys periodically
+    pub fn clear_expired_keys_in_all_stores(&mut self) {
+        // Remove expired keys
+        for (_, store) in self._stores_map.iter_mut() {
+            info!(
+                "Expiring the key for KeyValueStore({:?}).",
+                store.get_name()
+            );
+            store.clear_all_expired_keys();
+        }
     }
 }

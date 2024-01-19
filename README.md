@@ -16,7 +16,7 @@ A fast and lightweight KeyValue store written in Rust.
         - crates
 
 ## How to run
-```cargo run```
+```RUST_LOG=info cargo run```
 
 ## How to run test cases
 ```cargo test```

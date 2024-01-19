@@ -28,6 +28,10 @@ impl KeyValueStore {
         }
     }
 
+    pub fn get_name(&self) -> String {
+        self._name.to_owned()
+    }
+
     pub(super) fn _get_expiration_instant(&self, ttl: Option<u64>) -> Option<Instant> {
         if ttl.is_none() && self.default_ttl.is_none() {
             // If the ttl is None and the store allows for infinite ttl
