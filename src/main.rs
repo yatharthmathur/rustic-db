@@ -19,6 +19,7 @@ async fn handle_client(
 ) {
     // Your client handling logic goes here
     // TODO: Add all logic to handle client requests here.
+    // This is only temporary to test the Sockets and demonstrate the logic of handling requests.
 
     // This is how we can share the manager and store for the case where we just want to read.
     // NOTE: write_manager should only invoked if we want to write to the store.
