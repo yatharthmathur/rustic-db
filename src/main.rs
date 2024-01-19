@@ -13,14 +13,12 @@ use tokio::{
 
 async fn handle_client(
     mut tcp_stream: TcpStream,
-    write_manager: Arc<RwLock<RusticManager>>,
+    shared_manager: Arc<RwLock<RusticManager>>,
     start_instant: Instant,
 ) {
     // Your client handling logic goes here
-    let mut locked_writer = write_manager.write().await;
-    let store = locked_writer
-        .get_store_mut("default_store".to_owned())
-        .unwrap();
+    let mut manager = shared_manager.write().await;
+    let store = manager.get_store_mut("default_store".to_owned()).unwrap();
 
     println!(
         "Handling client from: {:?}",
@@ -56,15 +54,11 @@ async fn handle_client(
     }
 }
 
-async fn event_loop() {
-    // Bind the listener to the address
-    let listener = TcpListener::bind("127.0.0.1:29998").await.unwrap();
-    let shared_write_manager = Arc::new(RwLock::new(RusticManager::new()));
-    shared_write_manager
-        .write()
-        .await
-        .create_store("default_store".to_owned(), None);
-    let start_instant = Instant::now();
+async fn event_loop(
+    listener: TcpListener,
+    shared_manager: Arc<RwLock<RusticManager>>,
+    start_instant: Instant,
+) {
     loop {
         // Accept incoming connections
         match listener.accept().await {
@@ -72,7 +66,7 @@ async fn event_loop() {
                 // Spawn a new task to handle the client
                 tokio::spawn(handle_client(
                     socket,
-                    Arc::clone(&shared_write_manager),
+                    Arc::clone(&shared_manager),
                     start_instant,
                 ));
             }
@@ -83,7 +77,20 @@ async fn event_loop() {
 
 #[tokio::main]
 async fn main() {
-    // Start the event loop
+    let start_instant = Instant::now();
     println!("Hello, rustics!");
-    event_loop().await;
+
+    // Bind the listener to the address
+    let listener = TcpListener::bind("127.0.0.1:29998").await.unwrap();
+
+    println!("Listening on {}", "127.0.0.1:29998");
+
+    let shared_manager = Arc::new(RwLock::new(RusticManager::new()));
+    shared_manager
+        .write()
+        .await
+        .create_store("default_store".to_owned(), None);
+
+    // Start the event loop
+    event_loop(listener, shared_manager, start_instant).await;
 }
