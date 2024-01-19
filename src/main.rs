@@ -35,19 +35,25 @@ async fn handle_client(
     println!("Message body: {:?}", string_buff);
 
     let value = store.get_string("ABC".to_owned());
+    let return_buff: &[u8];
+
     if value.is_some() {
-        println!("Cache value is present {:?}", value.unwrap().unwrap());
+        let cache_value = value.unwrap().unwrap();
+        println!("Cache value is present {:?}", cache_value.to_string());
+        return_buff = cache_value.as_bytes();
+        let res = tcp_stream.write(return_buff).await;
+        println!("Response sent: {:?}", res.unwrap());
     } else {
+        println!("Cache value is not present");
         store.set_string(
             "ABC".to_owned(),
             start_instant.elapsed().as_secs().to_string() + " " + string_buff.as_str(),
             Some(5000),
         );
+        return_buff = "Cache is set".as_bytes();
+        let res = tcp_stream.write(return_buff).await;
+        println!("Response sent: {:?}", res.unwrap());
     }
-
-    let return_buff: &mut &[u8] = &mut "Hello, rustics! 😜".as_bytes();
-    let res = tcp_stream.write_buf(return_buff).await;
-    println!("Response sent: {:?}", res.unwrap());
 }
 
 async fn event_loop() {
