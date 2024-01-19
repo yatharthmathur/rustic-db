@@ -17,8 +17,19 @@ async fn handle_client(
     start_instant: Instant,
 ) {
     // Your client handling logic goes here
-    let mut manager = shared_manager.write().await;
-    let store = manager.get_store_mut("default_store".to_owned()).unwrap();
+    // TODO: Add all logic to handle client requests here.
+
+    // This is how we can share the manager and store for the case where we just want to read.
+    // NOTE: write_manager should only invoked if we want to write to the store.
+    let mut write_manager = shared_manager.write().await;
+    let store = write_manager
+        .get_store_mut("default_store".to_owned())
+        .unwrap();
+
+    // // This is how we can share the manager and store for the case where we just want to read.
+    // // We can only use one of these managers in a single thread or it will lead to a deadlock.
+    // let manager = shared_manager.read().await;
+    // let store = manager.get_store("default_store".to_owned()).unwrap();
 
     println!(
         "Handling client from: {:?}",
@@ -48,6 +59,7 @@ async fn handle_client(
             start_instant.elapsed().as_secs().to_string() + " " + string_buff.as_str(),
             Some(5000),
         );
+
         return_buff = "Cache is set".as_bytes();
         let res = tcp_stream.write(return_buff).await;
         println!("Response sent: {:?}", res.unwrap());
@@ -85,6 +97,7 @@ async fn main() {
 
     println!("Listening on {}", "127.0.0.1:29998");
 
+    // Using RwLock as it allows us to spawn n number of threads to read data, but only 1 to write it.
     let shared_manager = Arc::new(RwLock::new(RusticManager::new()));
     shared_manager
         .write()
